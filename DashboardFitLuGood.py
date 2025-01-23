@@ -1,7 +1,8 @@
 import base64
 
 import dash
-from dash import dcc, html, Input, Output
+from dash import Dash, Input, Output, ctx, html, dcc, callback
+
 import plotly.express as px
 import seaborn as sns
 import pandas as pd
@@ -18,30 +19,37 @@ matplotlib.pyplot.switch_backend('Agg')
 
 
 def exponential(x, a, b):
-#    return a * np.exp(-x/(6*24))
-    return a * np.exp(-x/(b/0.69314))
+    #    return a * np.exp(-x/(6*24))
+    return a * np.exp(-x / (b / 0.69314))
+
 
 # Leggi il file CSV
 df = pd.read_csv('Lu_IFO_2001_senzacorrezione.csv', parse_dates=['tempo_h'])
 #df['tempo_h'] = pd.to_datetime(df['tempo_h'], unit="h")
-df=df.set_index('tempo_h')
-df['time_delta'] = (df.index - df.index[0]).total_seconds()/60/60
-df=df.set_index('time_delta')
+df = df.set_index('tempo_h')
+df['time_delta'] = (df.index - df.index[0]).total_seconds() / 60 / 60
+df = df.set_index('time_delta')
 #df = df.drop("tempo_h", axis=1)
+df_to_show = df
 
 # Inizializzazione dell'app Dash
 app = dash.Dash(__name__)
 
 
 # Funzione per generare un grafico scatter con Seaborn
-def generate_scatterplot(x_range=None):
+def generate_scatterplot(x_range=None, selected_fraction=None):
+    print("entro in generate_scatterplot", x_range, selected_fraction)
     plt.figure(figsize=(6, 4))
+    if selected_fraction:
+        df_to_show = df.sample(frac=selected_fraction / 100, random_state=42)
+    else:
+        df_to_show = df
     for col in df:
-        sns.scatterplot(data=df, x=df.index, y=df[col], alpha=0.7, label=col)
+        sns.scatterplot(data=df_to_show, x=df_to_show.index, y=df_to_show[col], alpha=0.7, label=col)
     #sns.scatterplot(data=df, x=df.index, y="4_1072", alpha=0.7)
     #sns.scatterplot(data=df, x=df.index, y="0_1057", alpha=0.7)
 
-#    sns.scatterplot(data=df, x="bill_length_mm", y="bill_depth_mm", hue="species", alpha=0.7)
+    #    sns.scatterplot(data=df, x="bill_length_mm", y="bill_depth_mm", hue="species", alpha=0.7)
     if x_range:
         #plt.xlim(x_range)
         plt.axvline(x=x_range[0], color="salmon", linestyle="--", linewidth=1, label="Vertical Line")
@@ -49,7 +57,7 @@ def generate_scatterplot(x_range=None):
 
     plt.ylabel("Raw Rate [CPS]")
     plt.xlabel("Time [h]")
-    plt.legend(title="Sensors",bbox_to_anchor=(1.05, 1), loc='upper left')
+    plt.legend(title="Sensors", bbox_to_anchor=(1.05, 1), loc='upper left')
     plt.tight_layout()
     #plt.legend(title="Sensors", loc="upper left")
 
@@ -71,15 +79,36 @@ app.layout = html.Div(
             children=[
                 html.H3("Grafico Dati"),
                 html.Img(id="scatterplot", style={"width": "100%"}, src=None),
-                dcc.RangeSlider(
-                    id="range-slider",
-                    min=df.index.min(),
-                    max=df.index.max(),
-                    step=0.1,
-                    value=[df.index.min(), df.index.max()],
-                    #marks={round(i, 1): f"{i:.1f}" for i in
-                    #       np.linspace(df["bill_length_mm"].min(), df["bill_length_mm"].max(), 10)},
+                html.Div(
+                    children=[
+                        html.H4("Selezione Range"),
+                        dcc.RangeSlider(
+                            id="range-slider",
+                            min=df.index.min(),
+                            max=df.index.max(),
+                            step=0.1,
+                            value=[df.index.min(), df.index.max()],
+                            marks=None,
+                            #marks={round(i, 1): f"{i:.1f}" for i in
+                            #       np.linspace(df["bill_length_mm"].min(), df["bill_length_mm"].max(), 10)},
+                        ),
+                    ]
                 ),
+                html.Div(
+                    children=[
+                        html.H4("Selezione Frazione"),
+                        dcc.Slider(
+                            id="fraction-slider",
+                            min=0,
+                            max=100,
+                            step=5,
+                            value=100,
+                            # marks={round(i, 1): f"{i:.1f}" for i in
+                            #       np.linspace(df["bill_length_mm"].min(), df["bill_length_mm"].max(), 10)},
+                        ),
+                    ]
+                ),
+
             ],
         ),
         # Grafico B (valori estremi del selettore)
@@ -98,9 +127,12 @@ app.layout = html.Div(
 @app.callback(
     Output("scatterplot", "src"),
     Input("range-slider", "value"),
+    Input("fraction-slider", "value"),
 )
-def update_scatterplot(selected_range):
-    img = generate_scatterplot(x_range=selected_range)
+def update_scatterplot(selected_range, selected_fraction):
+    triggered_id = ctx.triggered_id
+    print("AAAA", triggered_id)
+    img = generate_scatterplot(x_range=selected_range, selected_fraction=selected_fraction)
     buf = io.BytesIO()
     img.save(buf, format="PNG")
     buf.seek(0)
@@ -112,16 +144,22 @@ def update_scatterplot(selected_range):
 @app.callback(
     Output("extreme-values", "figure"),
     Input("range-slider", "value"),
+    Input("fraction-slider", "value"),
 )
-def update_extreme_values(selected_range):
-    allTaus=[]
+def update_extreme_values(selected_range, selected_fraction):
+    allTaus = []
+    if selected_fraction:
+        df_to_show = df.sample(frac=selected_fraction / 100, random_state=42)
+    else:
+        df_to_show = df
+    print("Fitto dataset lungo: ", len(df_to_show))
     for col in df.columns:
         # Parametri iniziali per il fit
         initial_guess = [1000, 150]
         # Step 3: Eseguire il fitting
         # y_data = df['0_1057']
         # y_data = df[col]
-        filtered_df = df[(df.index >= selected_range[0]) & (df.index <= selected_range[1])]
+        filtered_df = df_to_show[(df_to_show.index >= selected_range[0]) & (df_to_show.index <= selected_range[1])]
         #params, covariance = curve_fit(exponential, df.index, df[col], p0=initial_guess)
         params, covariance = curve_fit(exponential, filtered_df.index, filtered_df[col], p0=initial_guess)
 
@@ -135,12 +173,12 @@ def update_extreme_values(selected_range):
         # Grafico con Seaborn
     #fig = plt.figure(figsize=(10, 6))
     #ax = sns.scatterplot(x=df.index, y=df["4_1072"], label=f'{1} data')  # Dati originali
-        # px.line(df,y=df.columns, title=f"All Rates Raw - {0}", color_discrete_sequence=px.colors.qualitative.Pastel)
-        #ax.set(xlabel="Time [h]", ylabel="Uncorrected Rate [CPS]")
-        #plt.plot(df.index, y_fit, label=f'{col} fit (a={a:.2f}, tau={tau / 24:.2f})')
-        #plt.legend(bbox_to_anchor=(1.05, 1), loc='upper left')
-        #plt.tight_layout()
-        #plt.savefig("AllDecay.pdf")
+    # px.line(df,y=df.columns, title=f"All Rates Raw - {0}", color_discrete_sequence=px.colors.qualitative.Pastel)
+    #ax.set(xlabel="Time [h]", ylabel="Uncorrected Rate [CPS]")
+    #plt.plot(df.index, y_fit, label=f'{col} fit (a={a:.2f}, tau={tau / 24:.2f})')
+    #plt.legend(bbox_to_anchor=(1.05, 1), loc='upper left')
+    #plt.tight_layout()
+    #plt.savefig("AllDecay.pdf")
     print("CIAO: ", selected_range, allTaus)
     fig = px.bar(
         x=range(10),
