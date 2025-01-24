@@ -116,7 +116,7 @@ app.layout = html.Div(
             style={"width": "50%", "padding": "20px"},
             children=[
                 html.H3("Risultato fit"),
-                dcc.Graph(id="extreme-values", style={"height": "400px"}),
+                dcc.Graph(id="all-taus", style={"height": "400px"}),
             ],
         ),
     ],
@@ -142,11 +142,11 @@ def update_scatterplot(selected_range, selected_fraction):
 
 # Callback per aggiornare il grafico dei valori estremi
 @app.callback(
-    Output("extreme-values", "figure"),
+    Output("all-taus", "figure"),
     Input("range-slider", "value"),
     Input("fraction-slider", "value"),
 )
-def update_extreme_values(selected_range, selected_fraction):
+def update_all_taus_graph(selected_range, selected_fraction):
     allTaus = []
     if selected_fraction:
         df_to_show = df.sample(frac=selected_fraction / 100, random_state=42)
@@ -180,6 +180,21 @@ def update_extreme_values(selected_range, selected_fraction):
     #plt.tight_layout()
     #plt.savefig("AllDecay.pdf")
     print("CIAO: ", selected_range, allTaus)
+    # channels = range(10)
+    # data = pd.DataFrame({"Channel": channels, "T1/2 [d]": allTaus})
+    # plt.figure(figsize=(10, 6))
+    # sns.barplot(data=data, x="Channel", y="T1/2 [d]", palette="viridis")
+    #
+    # # Personalizzazione
+    # plt.title("T1/2 fittati", fontsize=14)
+    # plt.xlabel("Channel", fontsize=12)
+    # plt.ylabel("T1/2 [d]", fontsize=12)
+    # plt.xticks(fontsize=10)
+    # plt.yticks(fontsize=10)
+    # plt.tight_layout()
+    # fig = plt.gcf()
+    #
+    #fig, axs = plt.subplots(nrows=2, ncols=1,figsize=(10, 6))
     fig = px.bar(
         x=range(10),
         y=allTaus,
