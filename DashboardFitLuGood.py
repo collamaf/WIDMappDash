@@ -22,6 +22,7 @@ def exponential(x, a, b):
     #    return a * np.exp(-x/(6*24))
     return a * np.exp(-x / (b / 0.69314))
 
+
 #rate_Lu_IFO_soglie13_Overweekend2401_senzacorrezione
 # Leggi il file CSV
 df = pd.read_csv('rate_Lu_IFO_soglie13_Overweekend2401_senzacorrezione.csv', parse_dates=['tempo_h'])
@@ -32,6 +33,8 @@ df['time_delta'] = (df.index - df.index[0]).total_seconds() / 60 / 60
 df = df.set_index('time_delta')
 #df = df.drop("tempo_h", axis=1)
 df_to_show = df
+
+test = -17
 
 # Inizializzazione dell'app Dash
 app = dash.Dash(__name__)
@@ -72,7 +75,8 @@ def generate_scatterplot(x_range=None, selected_fraction=None):
 
 # Layout dell'app
 app.layout = html.Div(
-    style={"display": "flex", "flexDirection": "column", "alignItems": "center","fontFamily": "Helvetica, Arial, sans-serif",},
+    style={"display": "flex", "flexDirection": "column", "alignItems": "center",
+           "fontFamily": "Helvetica, Arial, sans-serif", },
     children=[
         # Titolo centrato in alto
         html.H1(
@@ -109,7 +113,7 @@ app.layout = html.Div(
                         ),
                         html.Div(
                             children=[
-                                html.H4("Selezione Frazione"),
+                                html.H4("Selezione Frazione",id="fraction-title"),
                                 dcc.Slider(
                                     id="fraction-slider",
                                     min=0,
@@ -135,6 +139,8 @@ app.layout = html.Div(
         ),
     ],
 )
+
+
 # app.layout = html.Div(
 #     style={"display": "flex"},
 #     children=[
@@ -191,6 +197,16 @@ app.layout = html.Div(
 # )
 
 
+# Callback per aggiornare il titolo H4
+@app.callback(
+    Output("fraction-title", "children"),
+    Input("fraction-slider", "value"),
+)
+def update_title(slider_value):
+    return f"Selezione Frazione: {slider_value}"  # Testo con valore dinamico
+
+
+
 # Callback per aggiornare il grafico scatterplot
 @app.callback(
     Output("scatterplot", "src"),
@@ -198,6 +214,7 @@ app.layout = html.Div(
     Input("fraction-slider", "value"),
 )
 def update_scatterplot(selected_range, selected_fraction):
+    test = selected_fraction
     triggered_id = ctx.triggered_id
     print("AAAA", triggered_id)
     img = generate_scatterplot(x_range=selected_range, selected_fraction=selected_fraction)
@@ -289,6 +306,7 @@ def update_all_taus_graph(selected_range, selected_fraction):
     #)
     return fig
 
+
 #Callback per aggiornare il grafico dei valori estremi
 @app.callback(
     Output("all-taus-diff", "figure"),
@@ -315,7 +333,7 @@ def update_all_taus_graph(selected_range, selected_fraction):
         # Stampare i parametri del fit
         a, tau = params
         print(f"Parametri del fit: a={a}, b={tau}")
-        allTausDiff.append((tau / 24.0-6.6)/6.6*100)
+        allTausDiff.append((tau / 24.0 - 6.6) / 6.6 * 100)
         # Step 4: Calcolare i valori previsti dal modello
         y_fit = exponential(df.index, *params)
 
@@ -348,7 +366,7 @@ def update_all_taus_graph(selected_range, selected_fraction):
         x=range(10),
         y=allTausDiff,
         labels={"x": "Channel", "y": "Diff T1/2 [%]"},
-        title="T1/2 fittati",
+        title="Errori % su T1/2",
     )
 
     fig.update_layout(
@@ -363,8 +381,6 @@ def update_all_taus_graph(selected_range, selected_fraction):
     #    title="Valori Estremi del Range Selezionato",
     #)
     return fig
-
-
 
 
 # Esecuzione dell'app
