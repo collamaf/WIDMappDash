@@ -12,6 +12,7 @@ import numpy as np
 import io
 from PIL import Image
 from scipy.optimize import curve_fit
+import random
 
 # Creiamo un dataset di esempio
 #df = sns.load_dataset("penguins").dropna()
@@ -21,6 +22,16 @@ matplotlib.pyplot.switch_backend('Agg')
 def exponential(x, a, b):
     #    return a * np.exp(-x/(6*24))
     return a * np.exp(-x / (b / 0.69314))
+
+
+def generate_meas_intervals(N, M, L):
+    numbers = []
+    while len(numbers) < N:
+        num = random.uniform(0, M)
+        # Check if the number is sufficiently far from all others
+        if all(abs(num - existing) >= L for existing in numbers):
+            numbers.append(num)
+    return numbers
 
 
 #rate_Lu_IFO_soglie13_Overweekend2401_senzacorrezione
@@ -34,7 +45,20 @@ df = df.set_index('time_delta')
 #df = df.drop("tempo_h", axis=1)
 df_to_show = df
 
+total_duration_min = len(df_to_show) * 100 / 60
 
+numberOfMeas = 10
+measDurationInMin = 30
+minDistanceBetweenMeasInMin = 180
+
+
+generated_measurements = generate_meas_intervals(numberOfMeas, total_duration_min, minDistanceBetweenMeasInMin)
+
+print(
+    f"Caricato dataset: è lungo {len(df_to_show)} misure, quindi {total_duration_min:.0f}min, {len(df_to_show) / 3600 * 100:.1f}h")
+
+for meas in generated_measurements:
+    print(f"Misura generata: {meas:.1f} min")
 # Inizializzazione dell'app Dash
 app = dash.Dash(__name__)
 
@@ -55,8 +79,12 @@ def generate_scatterplot(x_range=None, selected_fraction=None):
     #    sns.scatterplot(data=df, x="bill_length_mm", y="bill_depth_mm", hue="species", alpha=0.7)
     if x_range:
         #plt.xlim(x_range)
-        plt.axvline(x=x_range[0], color="salmon", linestyle="--", linewidth=1, label="Vertical Line")
-        plt.axvline(x=x_range[1], color="salmon", linestyle="--", linewidth=1, label="Vertical Line")
+        plt.axvline(x=x_range[0], color="salmon", linestyle="--", linewidth=1, label="_nolegend_")
+        plt.axvline(x=x_range[1], color="salmon", linestyle="--", linewidth=1, label="_nolegend_")
+
+    for meas in generated_measurements:
+        #plt.axvline(x=meas/60, color="blue", linestyle="--", linewidth=1, label="Vertical Line")
+        plt.axvspan((meas-measDurationInMin)/60, (meas+measDurationInMin)/60, color='limegreen', alpha=0.3, label="_nolegend_")
 
     plt.ylabel("Raw Rate [CPS]")
     plt.xlabel("Time [h]")
@@ -112,7 +140,7 @@ app.layout = html.Div(
                         ),
                         html.Div(
                             children=[
-                                html.H4("Selezione Frazione",id="fraction-title"),
+                                html.H4("Selezione Frazione", id="fraction-title"),
                                 dcc.Slider(
                                     id="fraction-slider",
                                     min=0,
@@ -205,7 +233,6 @@ def update_title(slider_value):
     return f"Selezione Frazione: {slider_value}"  # Testo con valore dinamico
 
 
-
 # Callback per aggiornare il grafico scatterplot
 @app.callback(
     Output("scatterplot", "src"),
@@ -262,7 +289,7 @@ def update_all_taus_graph(selected_range, selected_fraction):
     #plt.legend(bbox_to_anchor=(1.05, 1), loc='upper left')
     #plt.tight_layout()
     #plt.savefig("AllDecay.pdf")
-    print("CIAO: ", selected_range, allTaus)
+    #print("CIAO: ", selected_range, allTaus)
     # channels = range(10)
     # data = pd.DataFrame({"Channel": channels, "T1/2 [d]": allTaus})
     # plt.figure(figsize=(10, 6))
@@ -330,7 +357,7 @@ def update_all_taus_graph(selected_range, selected_fraction):
 
         # Stampare i parametri del fit
         a, tau = params
-        print(f"Parametri del fit: a={a}, b={tau}")
+        #print(f"Parametri del fit: a={a}, b={tau}")
         allTausDiff.append((tau / 24.0 - 6.6) / 6.6 * 100)
         # Step 4: Calcolare i valori previsti dal modello
         y_fit = exponential(df.index, *params)
@@ -344,7 +371,7 @@ def update_all_taus_graph(selected_range, selected_fraction):
     #plt.legend(bbox_to_anchor=(1.05, 1), loc='upper left')
     #plt.tight_layout()
     #plt.savefig("AllDecay.pdf")
-    print("CIAO: ", selected_range, allTausDiff)
+    #print("CIAO: ", selected_range, allTausDiff)
     # channels = range(10)
     # data = pd.DataFrame({"Channel": channels, "T1/2 [d]": allTaus})
     # plt.figure(figsize=(10, 6))
