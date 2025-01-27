@@ -34,7 +34,6 @@ df = df.set_index('time_delta')
 #df = df.drop("tempo_h", axis=1)
 df_to_show = df
 
-test = -17
 
 # Inizializzazione dell'app Dash
 app = dash.Dash(__name__)
@@ -42,7 +41,7 @@ app = dash.Dash(__name__)
 
 # Funzione per generare un grafico scatter con Seaborn
 def generate_scatterplot(x_range=None, selected_fraction=None):
-    print("entro in generate_scatterplot", x_range, selected_fraction)
+    #print("entro in generate_scatterplot", x_range, selected_fraction)
     plt.figure(figsize=(6, 4))
     if selected_fraction:
         df_to_show = df.sample(frac=selected_fraction / 100, random_state=42)
@@ -214,9 +213,8 @@ def update_title(slider_value):
     Input("fraction-slider", "value"),
 )
 def update_scatterplot(selected_range, selected_fraction):
-    test = selected_fraction
     triggered_id = ctx.triggered_id
-    print("AAAA", triggered_id)
+    #print("AAAA", triggered_id)
     img = generate_scatterplot(x_range=selected_range, selected_fraction=selected_fraction)
     buf = io.BytesIO()
     img.save(buf, format="PNG")
@@ -237,7 +235,7 @@ def update_all_taus_graph(selected_range, selected_fraction):
         df_to_show = df.sample(frac=selected_fraction / 100, random_state=42)
     else:
         df_to_show = df
-    print("Fitto dataset lungo: ", len(df_to_show))
+    #print("Fitto dataset lungo: ", len(df_to_show))
     for col in df.columns:
         # Parametri iniziali per il fit
         initial_guess = [1000, 150]
@@ -250,7 +248,7 @@ def update_all_taus_graph(selected_range, selected_fraction):
 
         # Stampare i parametri del fit
         a, tau = params
-        print(f"Parametri del fit: a={a}, b={tau}")
+        #print(f"Parametri del fit: a={a}, b={tau}")
         allTaus.append(tau / 24.0)
         # Step 4: Calcolare i valori previsti dal modello
         y_fit = exponential(df.index, *params)
