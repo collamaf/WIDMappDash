@@ -22,9 +22,10 @@ def exponential(x, a, b):
     #    return a * np.exp(-x/(6*24))
     return a * np.exp(-x / (b / 0.69314))
 
-
+#rate_Lu_IFO_soglie13_Overweekend2401_senzacorrezione
 # Leggi il file CSV
-df = pd.read_csv('Lu_IFO_2001_senzacorrezione.csv', parse_dates=['tempo_h'])
+df = pd.read_csv('rate_Lu_IFO_soglie13_Overweekend2401_senzacorrezione.csv', parse_dates=['tempo_h'])
+#df = pd.read_csv('Lu_IFO_2001_senzacorrezione.csv', parse_dates=['tempo_h'])
 #df['tempo_h'] = pd.to_datetime(df['tempo_h'], unit="h")
 df = df.set_index('tempo_h')
 df['time_delta'] = (df.index - df.index[0]).total_seconds() / 60 / 60
@@ -71,56 +72,123 @@ def generate_scatterplot(x_range=None, selected_fraction=None):
 
 # Layout dell'app
 app.layout = html.Div(
-    style={"display": "flex"},
+    style={"display": "flex", "flexDirection": "column", "alignItems": "center","fontFamily": "Helvetica, Arial, sans-serif",},
     children=[
-        # Grafico A (scatterplot con Seaborn)
-        html.Div(
-            style={"width": "50%"},
-            children=[
-                html.H3("Grafico Dati"),
-                html.Img(id="scatterplot", style={"width": "100%"}, src=None),
-                html.Div(
-                    children=[
-                        html.H4("Selezione Range"),
-                        dcc.RangeSlider(
-                            id="range-slider",
-                            min=df.index.min(),
-                            max=df.index.max(),
-                            step=0.1,
-                            value=[df.index.min(), df.index.max()],
-                            marks=None,
-                            #marks={round(i, 1): f"{i:.1f}" for i in
-                            #       np.linspace(df["bill_length_mm"].min(), df["bill_length_mm"].max(), 10)},
-                        ),
-                    ]
-                ),
-                html.Div(
-                    children=[
-                        html.H4("Selezione Frazione"),
-                        dcc.Slider(
-                            id="fraction-slider",
-                            min=0,
-                            max=100,
-                            step=5,
-                            value=100,
-                            # marks={round(i, 1): f"{i:.1f}" for i in
-                            #       np.linspace(df["bill_length_mm"].min(), df["bill_length_mm"].max(), 10)},
-                        ),
-                    ]
-                ),
-
-            ],
+        # Titolo centrato in alto
+        html.H1(
+            "WIDMApp",
+            style={
+                "textAlign": "center",
+                "width": "100%",
+                "padding": "20px",
+                "marginBottom": "20px",
+                "fontSize": "50px",
+            },
         ),
-        # Grafico B (valori estremi del selettore)
         html.Div(
-            style={"width": "50%", "padding": "20px"},
+            style={"display": "flex", "width": "100%"},
             children=[
-                html.H3("Risultato fit"),
-                dcc.Graph(id="all-taus", style={"height": "400px"}),
+                # Grafico A (scatterplot con Seaborn)
+                html.Div(
+                    style={"width": "50%", "padding": "20px"},
+                    children=[
+                        html.H3("Grafico Dati"),
+                        html.Img(id="scatterplot", style={"width": "100%"}, src=None),
+                        html.Div(
+                            children=[
+                                html.H4("Selezione Range"),
+                                dcc.RangeSlider(
+                                    id="range-slider",
+                                    min=df.index.min(),
+                                    max=df.index.max(),
+                                    step=0.1,
+                                    value=[df.index.min(), df.index.max()],
+                                    marks=None,
+                                ),
+                            ]
+                        ),
+                        html.Div(
+                            children=[
+                                html.H4("Selezione Frazione"),
+                                dcc.Slider(
+                                    id="fraction-slider",
+                                    min=0,
+                                    max=100,
+                                    step=1,
+                                    value=100,
+                                    marks={i: str(i) for i in range(0, 101, 2)},
+                                ),
+                            ]
+                        ),
+                    ],
+                ),
+                # Grafico B (valori estremi del selettore)
+                html.Div(
+                    style={"width": "50%", "padding": "20px"},
+                    children=[
+                        html.H3("Risultato fit"),
+                        dcc.Graph(id="all-taus", style={"height": "400px"}),
+                        dcc.Graph(id="all-taus-diff", style={"height": "400px"}),
+                    ],
+                ),
             ],
         ),
     ],
 )
+# app.layout = html.Div(
+#     style={"display": "flex"},
+#     children=[
+#         # Grafico A (scatterplot con Seaborn)
+#         html.H1("WIDMApp"),
+#         html.Div(
+#             style={"width": "50%"},
+#             children=[
+#                 html.H3("Grafico Dati"),
+#                 html.Img(id="scatterplot", style={"width": "100%"}, src=None),
+#                 html.Div(
+#                     children=[
+#                         html.H4("Selezione Range"),
+#                         dcc.RangeSlider(
+#                             id="range-slider",
+#                             min=df.index.min(),
+#                             max=df.index.max(),
+#                             step=0.1,
+#                             value=[df.index.min(), df.index.max()],
+#                             marks=None,
+#                             #marks={round(i, 1): f"{i:.1f}" for i in
+#                             #       np.linspace(df["bill_length_mm"].min(), df["bill_length_mm"].max(), 10)},
+#                         ),
+#                     ]
+#                 ),
+#                 html.Div(
+#                     children=[
+#                         html.H4("Selezione Frazione"),
+#                         dcc.Slider(
+#                             id="fraction-slider",
+#                             min=0,
+#                             max=100,
+#                             step=1,
+#                             value=100,
+#                             marks = {i: str(i) for i in range(0, 101, 2)},
+#                             # marks={round(i, 1): f"{i:.1f}" for i in
+#                             #       np.linspace(df["bill_length_mm"].min(), df["bill_length_mm"].max(), 10)},
+#                         ),
+#                     ]
+#                 ),
+#
+#             ],
+#         ),
+#         # Grafico B (valori estremi del selettore)
+#         html.Div(
+#             style={"width": "50%", "padding": "20px"},
+#             children=[
+#                 html.H3("Risultato fit"),
+#                 dcc.Graph(id="all-taus", style={"height": "400px"}),
+#                 dcc.Graph(id="all-taus-diff", style={"height": "400px"}),
+#             ],
+#         ),
+#     ],
+# )
 
 
 # Callback per aggiornare il grafico scatterplot
@@ -220,6 +288,83 @@ def update_all_taus_graph(selected_range, selected_fraction):
     #    title="Valori Estremi del Range Selezionato",
     #)
     return fig
+
+#Callback per aggiornare il grafico dei valori estremi
+@app.callback(
+    Output("all-taus-diff", "figure"),
+    Input("range-slider", "value"),
+    Input("fraction-slider", "value"),
+)
+def update_all_taus_graph(selected_range, selected_fraction):
+    allTausDiff = []
+    if selected_fraction:
+        df_to_show = df.sample(frac=selected_fraction / 100, random_state=42)
+    else:
+        df_to_show = df
+    print("Fitto dataset lungo: ", len(df_to_show))
+    for col in df.columns:
+        # Parametri iniziali per il fit
+        initial_guess = [1000, 150]
+        # Step 3: Eseguire il fitting
+        # y_data = df['0_1057']
+        # y_data = df[col]
+        filtered_df = df_to_show[(df_to_show.index >= selected_range[0]) & (df_to_show.index <= selected_range[1])]
+        #params, covariance = curve_fit(exponential, df.index, df[col], p0=initial_guess)
+        params, covariance = curve_fit(exponential, filtered_df.index, filtered_df[col], p0=initial_guess)
+
+        # Stampare i parametri del fit
+        a, tau = params
+        print(f"Parametri del fit: a={a}, b={tau}")
+        allTausDiff.append((tau / 24.0-6.6)/6.6*100)
+        # Step 4: Calcolare i valori previsti dal modello
+        y_fit = exponential(df.index, *params)
+
+        # Grafico con Seaborn
+    #fig = plt.figure(figsize=(10, 6))
+    #ax = sns.scatterplot(x=df.index, y=df["4_1072"], label=f'{1} data')  # Dati originali
+    # px.line(df,y=df.columns, title=f"All Rates Raw - {0}", color_discrete_sequence=px.colors.qualitative.Pastel)
+    #ax.set(xlabel="Time [h]", ylabel="Uncorrected Rate [CPS]")
+    #plt.plot(df.index, y_fit, label=f'{col} fit (a={a:.2f}, tau={tau / 24:.2f})')
+    #plt.legend(bbox_to_anchor=(1.05, 1), loc='upper left')
+    #plt.tight_layout()
+    #plt.savefig("AllDecay.pdf")
+    print("CIAO: ", selected_range, allTausDiff)
+    # channels = range(10)
+    # data = pd.DataFrame({"Channel": channels, "T1/2 [d]": allTaus})
+    # plt.figure(figsize=(10, 6))
+    # sns.barplot(data=data, x="Channel", y="T1/2 [d]", palette="viridis")
+    #
+    # # Personalizzazione
+    # plt.title("T1/2 fittati", fontsize=14)
+    # plt.xlabel("Channel", fontsize=12)
+    # plt.ylabel("T1/2 [d]", fontsize=12)
+    # plt.xticks(fontsize=10)
+    # plt.yticks(fontsize=10)
+    # plt.tight_layout()
+    # fig = plt.gcf()
+    #
+    #fig, axs = plt.subplots(nrows=2, ncols=1,figsize=(10, 6))
+    fig = px.bar(
+        x=range(10),
+        y=allTausDiff,
+        labels={"x": "Channel", "y": "Diff T1/2 [%]"},
+        title="T1/2 fittati",
+    )
+
+    fig.update_layout(
+        #xaxis=dict(range=[0, 15]),  # Range fisso per l'asse X
+        yaxis=dict(range=[-100, 100]),  # Range fisso per l'asse Y
+    )
+
+    #fig = px.bar(
+    #    x=["Min", "Max"],
+    #    y=selected_range,
+    #    labels={"x": "Estremo", "y": "Valore"},
+    #    title="Valori Estremi del Range Selezionato",
+    #)
+    return fig
+
+
 
 
 # Esecuzione dell'app
