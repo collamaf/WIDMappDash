@@ -72,7 +72,7 @@ def generate_scatterplot(x_range=None):
     # else:
     #     df_to_show = df
     for col in df:
-        sns.scatterplot(data=df_to_show, x=df_to_show.index, y=df_to_show[col], alpha=0.7, label=col)
+        sns.scatterplot(data=df_to_show, x=df_to_show.index, y=df_to_show[col], alpha=0.4, label=col)
     #sns.scatterplot(data=df, x=df.index, y="4_1072", alpha=0.7)
     #sns.scatterplot(data=df, x=df.index, y="0_1057", alpha=0.7)
 
@@ -127,7 +127,7 @@ app.layout = html.Div(
                         html.Img(id="scatterplot", style={"width": "100%"}, src=None),
                         html.Div(
                             children=[
-                                html.H4("Selezione Range"),
+                                html.H4("Selezione Range", id="range-values"),
                                 dcc.RangeSlider(
                                     id="range-slider",
                                     min=df.index.min(),
@@ -244,6 +244,15 @@ app.layout = html.Div(
 def update_meas_number(slider_value):
     numberOfMeas=slider_value
     return f"Selezione Numero misure: {numberOfMeas}"
+
+
+# Callback per aggiornare il valore del range
+@app.callback(
+    Output("range-values", "children"),
+    Input("range-slider", "value"),
+)
+def update_range_values(slider_value):
+    return f"Range selezionato: {slider_value} h"
 
 
 
