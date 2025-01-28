@@ -82,9 +82,9 @@ def generate_scatterplot(x_range=None, selected_fraction=None):
         plt.axvline(x=x_range[0], color="salmon", linestyle="--", linewidth=1, label="_nolegend_")
         plt.axvline(x=x_range[1], color="salmon", linestyle="--", linewidth=1, label="_nolegend_")
 
-    for meas in generated_measurements:
+    #for meas in generated_measurements:
         #plt.axvline(x=meas/60, color="blue", linestyle="--", linewidth=1, label="Vertical Line")
-        plt.axvspan((meas-measDurationInMin)/60, (meas+measDurationInMin)/60, color='limegreen', alpha=0.3, label="_nolegend_")
+        #plt.axvspan((meas-measDurationInMin)/60, (meas+measDurationInMin)/60, color='limegreen', alpha=0.3, label="_nolegend_")
 
     plt.ylabel("Raw Rate [CPS]")
     plt.xlabel("Time [h]")
@@ -148,6 +148,19 @@ app.layout = html.Div(
                                     step=1,
                                     value=100,
                                     marks={i: str(i) for i in range(0, 101, 2)},
+                                ),
+                            ]
+                        ),
+                        html.Div(
+                            children=[
+                                html.H4("Selezione Numero misure", id="meas-number"),
+                                dcc.Slider(
+                                    id="meas-number-slider",
+                                    min=1,
+                                    max=50,
+                                    step=1,
+                                    value=10,
+                                    marks={i: str(i) for i in range(0, 51, 2)},
                                 ),
                             ]
                         ),
@@ -222,6 +235,16 @@ app.layout = html.Div(
 #         ),
 #     ],
 # )
+
+# Callback per aggiornare il numero di misure
+@app.callback(
+    Output("meas-number", "children"),
+    Input("meas-number-slider", "value"),
+)
+def update_meas_number(slider_value):
+    numberOfMeas=slider_value
+    return f"Selezione Numero misure: {numberOfMeas}"
+
 
 
 # Callback per aggiornare il titolo H4
@@ -397,8 +420,10 @@ def update_all_taus_graph(selected_range, selected_fraction):
     fig.update_layout(
         #xaxis=dict(range=[0, 15]),  # Range fisso per l'asse X
         yaxis=dict(range=[-100, 100]),  # Range fisso per l'asse Y
+        #marker_color="orange",
     )
 
+    fig.update_traces(marker_color="coral")
     #fig = px.bar(
     #    x=["Min", "Max"],
     #    y=selected_range,
