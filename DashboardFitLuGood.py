@@ -51,19 +51,19 @@ numberOfMeas = 10
 measDurationInMin = 30
 minDistanceBetweenMeasInMin = 180
 
-generated_measurements = generate_meas_intervals(numberOfMeas, total_duration_min, minDistanceBetweenMeasInMin)
+#generated_measurements = generate_meas_intervals(numberOfMeas, total_duration_min, minDistanceBetweenMeasInMin)
 
 print(
     f"Caricato dataset: è lungo {len(df)} misure, quindi {total_duration_min:.0f}min, {len(df) / 3600 * 100:.1f}h")
 
-for meas in generated_measurements:
-    print(f"Misura generata: {meas:.1f} min")
+#for meas in generated_measurements:
+#    print(f"Misura generata: {meas:.1f} min")
 # Inizializzazione dell'app Dash
 app = dash.Dash(__name__)
 
 
 # Funzione per generare un grafico scatter con Seaborn
-def generate_scatterplot(x_range=None):
+def generate_scatterplot(x_range=None, generated_measurements=None):
     #print("entro in generate_scatterplot", x_range, selected_fraction)
     plt.figure(figsize=(6, 4))
     # if selected_fraction:
@@ -81,9 +81,9 @@ def generate_scatterplot(x_range=None):
         plt.axvline(x=x_range[0], color="salmon", linestyle="--", linewidth=1, label="_nolegend_")
         plt.axvline(x=x_range[1], color="salmon", linestyle="--", linewidth=1, label="_nolegend_")
 
-    #for meas in generated_measurements:
+    for meas in generated_measurements:
     #plt.axvline(x=meas/60, color="blue", linestyle="--", linewidth=1, label="Vertical Line")
-    #plt.axvspan((meas-measDurationInMin)/60, (meas+measDurationInMin)/60, color='limegreen', alpha=0.3, label="_nolegend_")
+        plt.axvspan((meas-measDurationInMin)/60, (meas+measDurationInMin)/60, color='limegreen', alpha=0.3, label="_nolegend_")
 
     plt.ylabel("Raw Rate [CPS]")
     plt.xlabel("Time [h]")
@@ -156,7 +156,7 @@ app.layout = html.Div(
                                 dcc.Slider(
                                     id="meas-number-slider",
                                     min=1,
-                                    max=50,
+                                    max=20,
                                     step=1,
                                     value=10,
                                     marks={i: str(i) for i in range(0, 51, 2)},
@@ -274,13 +274,17 @@ def update_scatterplot(selected_range, selected_fraction, meas_number):
     triggered_id = ctx.triggered_id
     #print("Trigger è stato", triggered_id)
     global df_to_show  #Cosi recupero la globale e non ne creo una nuova
+
+    generated_measurements = generate_meas_intervals(meas_number, total_duration_min, minDistanceBetweenMeasInMin)
+    for meas in generated_measurements:
+        print(f"Misura generata: {meas:.1f} min")
     if selected_fraction != 100:
         print("Resamplo con frazione ", selected_fraction)
         df_to_show = df.sample(frac=selected_fraction / 100)
     else:
         print("Prendo tutto il df")
         df_to_show = df
-    img = generate_scatterplot(x_range=selected_range)
+    img = generate_scatterplot(x_range=selected_range, generated_measurements=generated_measurements)
     buf = io.BytesIO()
     img.save(buf, format="PNG")
     buf.seek(0)
