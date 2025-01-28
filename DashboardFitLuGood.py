@@ -51,7 +51,6 @@ numberOfMeas = 10
 measDurationInMin = 30
 minDistanceBetweenMeasInMin = 180
 
-
 generated_measurements = generate_meas_intervals(numberOfMeas, total_duration_min, minDistanceBetweenMeasInMin)
 
 print(
@@ -83,8 +82,8 @@ def generate_scatterplot(x_range=None):
         plt.axvline(x=x_range[1], color="salmon", linestyle="--", linewidth=1, label="_nolegend_")
 
     #for meas in generated_measurements:
-        #plt.axvline(x=meas/60, color="blue", linestyle="--", linewidth=1, label="Vertical Line")
-        #plt.axvspan((meas-measDurationInMin)/60, (meas+measDurationInMin)/60, color='limegreen', alpha=0.3, label="_nolegend_")
+    #plt.axvline(x=meas/60, color="blue", linestyle="--", linewidth=1, label="Vertical Line")
+    #plt.axvspan((meas-measDurationInMin)/60, (meas+measDurationInMin)/60, color='limegreen', alpha=0.3, label="_nolegend_")
 
     plt.ylabel("Raw Rate [CPS]")
     plt.xlabel("Time [h]")
@@ -242,7 +241,7 @@ app.layout = html.Div(
     Input("meas-number-slider", "value"),
 )
 def update_meas_number(slider_value):
-    numberOfMeas=slider_value
+    numberOfMeas = slider_value
     return f"Selezione Numero misure: {numberOfMeas}"
 
 
@@ -253,7 +252,6 @@ def update_meas_number(slider_value):
 )
 def update_range_values(slider_value):
     return f"Range selezionato: {slider_value} h"
-
 
 
 # Callback per aggiornare il titolo H4
@@ -270,12 +268,13 @@ def update_title(slider_value):
     Output("scatterplot", "src"),
     Input("range-slider", "value"),
     Input("fraction-slider", "value"),
+    Input("meas-number-slider", "value"),
 )
-def update_scatterplot(selected_range, selected_fraction):
+def update_scatterplot(selected_range, selected_fraction, meas_number):
     triggered_id = ctx.triggered_id
     #print("Trigger è stato", triggered_id)
-    global df_to_show #Cosi recupero la globale e non ne creo una nuova
-    if selected_fraction:
+    global df_to_show  #Cosi recupero la globale e non ne creo una nuova
+    if selected_fraction != 100:
         print("Resamplo con frazione ", selected_fraction)
         df_to_show = df.sample(frac=selected_fraction / 100)
     else:
