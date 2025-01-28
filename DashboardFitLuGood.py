@@ -45,7 +45,7 @@ df = df.set_index('time_delta')
 #df = df.drop("tempo_h", axis=1)
 df_to_show = df
 
-total_duration_min = len(df_to_show) * 100 / 60
+total_duration_min = len(df) * 100 / 60
 
 numberOfMeas = 10
 measDurationInMin = 30
@@ -55,7 +55,7 @@ minDistanceBetweenMeasInMin = 180
 generated_measurements = generate_meas_intervals(numberOfMeas, total_duration_min, minDistanceBetweenMeasInMin)
 
 print(
-    f"Caricato dataset: è lungo {len(df_to_show)} misure, quindi {total_duration_min:.0f}min, {len(df_to_show) / 3600 * 100:.1f}h")
+    f"Caricato dataset: è lungo {len(df)} misure, quindi {total_duration_min:.0f}min, {len(df) / 3600 * 100:.1f}h")
 
 for meas in generated_measurements:
     print(f"Misura generata: {meas:.1f} min")
@@ -64,13 +64,13 @@ app = dash.Dash(__name__)
 
 
 # Funzione per generare un grafico scatter con Seaborn
-def generate_scatterplot(x_range=None, selected_fraction=None):
+def generate_scatterplot(x_range=None):
     #print("entro in generate_scatterplot", x_range, selected_fraction)
     plt.figure(figsize=(6, 4))
-    if selected_fraction:
-        df_to_show = df.sample(frac=selected_fraction / 100, random_state=42)
-    else:
-        df_to_show = df
+    # if selected_fraction:
+    #     df_to_show = df.sample(frac=selected_fraction / 100, random_state=42)
+    # else:
+    #     df_to_show = df
     for col in df:
         sns.scatterplot(data=df_to_show, x=df_to_show.index, y=df_to_show[col], alpha=0.7, label=col)
     #sns.scatterplot(data=df, x=df.index, y="4_1072", alpha=0.7)
@@ -264,8 +264,15 @@ def update_title(slider_value):
 )
 def update_scatterplot(selected_range, selected_fraction):
     triggered_id = ctx.triggered_id
-    #print("AAAA", triggered_id)
-    img = generate_scatterplot(x_range=selected_range, selected_fraction=selected_fraction)
+    #print("Trigger è stato", triggered_id)
+    global df_to_show #Cosi recupero la globale e non ne creo una nuova
+    if selected_fraction:
+        print("Resamplo con frazione ", selected_fraction)
+        df_to_show = df.sample(frac=selected_fraction / 100)
+    else:
+        print("Prendo tutto il df")
+        df_to_show = df
+    img = generate_scatterplot(x_range=selected_range)
     buf = io.BytesIO()
     img.save(buf, format="PNG")
     buf.seek(0)
@@ -280,11 +287,11 @@ def update_scatterplot(selected_range, selected_fraction):
     Input("fraction-slider", "value"),
 )
 def update_all_taus_graph(selected_range, selected_fraction):
-    allTaus = []
-    if selected_fraction:
-        df_to_show = df.sample(frac=selected_fraction / 100, random_state=42)
-    else:
-        df_to_show = df
+    all_taus = []
+    # if selected_fraction:
+    #     df_to_show = df.sample(frac=selected_fraction / 100, random_state=42)
+    # else:
+    #     df_to_show = df
     #print("Fitto dataset lungo: ", len(df_to_show))
     for col in df.columns:
         # Parametri iniziali per il fit
@@ -299,7 +306,7 @@ def update_all_taus_graph(selected_range, selected_fraction):
         # Stampare i parametri del fit
         a, tau = params
         #print(f"Parametri del fit: a={a}, b={tau}")
-        allTaus.append(tau / 24.0)
+        all_taus.append(tau / 24.0)
         # Step 4: Calcolare i valori previsti dal modello
         y_fit = exponential(df.index, *params)
 
@@ -312,9 +319,9 @@ def update_all_taus_graph(selected_range, selected_fraction):
     #plt.legend(bbox_to_anchor=(1.05, 1), loc='upper left')
     #plt.tight_layout()
     #plt.savefig("AllDecay.pdf")
-    #print("CIAO: ", selected_range, allTaus)
+    #print("CIAO: ", selected_range, all_taus)
     # channels = range(10)
-    # data = pd.DataFrame({"Channel": channels, "T1/2 [d]": allTaus})
+    # data = pd.DataFrame({"Channel": channels, "T1/2 [d]": all_taus})
     # plt.figure(figsize=(10, 6))
     # sns.barplot(data=data, x="Channel", y="T1/2 [d]", palette="viridis")
     #
@@ -330,7 +337,7 @@ def update_all_taus_graph(selected_range, selected_fraction):
     #fig, axs = plt.subplots(nrows=2, ncols=1,figsize=(10, 6))
     fig = px.bar(
         x=range(10),
-        y=allTaus,
+        y=all_taus,
         labels={"x": "Channel", "y": "T1/2 [d]"},
         title="T1/2 fittati",
     )
@@ -361,12 +368,12 @@ def update_all_taus_graph(selected_range, selected_fraction):
     Input("range-slider", "value"),
     Input("fraction-slider", "value"),
 )
-def update_all_taus_graph(selected_range, selected_fraction):
+def update_all_taus_diff_graph(selected_range, selected_fraction):
     allTausDiff = []
-    if selected_fraction:
-        df_to_show = df.sample(frac=selected_fraction / 100, random_state=42)
-    else:
-        df_to_show = df
+    # if selected_fraction:
+    #     df_to_show = df.sample(frac=selected_fraction / 100, random_state=42)
+    # else:
+    #     df_to_show = df
     print("Fitto dataset lungo: ", len(df_to_show))
     for col in df.columns:
         # Parametri iniziali per il fit
