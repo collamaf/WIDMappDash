@@ -84,7 +84,7 @@ def generate_scatterplot(x_range=None, generated_measurements=None):
 
     plt.ylabel("Raw Rate [CPS]")
     plt.xlabel("Time [h]")
-    plt.legend(title="Sensors", bbox_to_anchor=(1.05, 1), loc='upper left')
+    plt.legend(title="Channels", bbox_to_anchor=(1.05, 1), loc='upper left')
     plt.tight_layout()
     # plt.legend(title="Sensors", loc="upper left")
 
@@ -200,7 +200,7 @@ def update_range_values(slider_value):
     Output("fraction-title", "children"),
     Input("fraction-slider", "value"),
 )
-def update_title(slider_value):
+def update_selected_fraction(slider_value):
     return f"Selezione Frazione: {slider_value}"  # Testo con valore dinamico
 
 
