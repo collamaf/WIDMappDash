@@ -49,7 +49,8 @@ numberOfMeas = 10
 measDurationInMin = 30
 minDistanceBetweenMeasInMin = 180
 
-all_found_taus = [None] * 10
+all_found_taus = [0] * 10
+real_t12 = 6.6
 
 # generated_measurements = generate_meas_intervals(numberOfMeas, total_duration_min, minDistanceBetweenMeasInMin)
 
@@ -297,6 +298,7 @@ def update_all_taus_graph(selected_range, selected_fraction):
     #    labels={"x": "Estremo", "y": "Valore"},
     #    title="Valori Estremi del Range Selezionato",
     # )
+    print("Fatto", all_found_taus)
     return fig
 
 
@@ -307,50 +309,20 @@ def update_all_taus_graph(selected_range, selected_fraction):
     Input("fraction-slider", "value"),
 )
 def update_all_taus_diff_graph(selected_range, selected_fraction):
-    allTausDiff = []
-    # if selected_fraction:
-    #     df_to_show = df.sample(frac=selected_fraction / 100, random_state=42)
-    # else:
-    #     df_to_show = df
-    print("Fitto dataset lungo: ", len(df_to_consider_for_fit))
-    for col in df.columns:
-        # Parametri iniziali per il fit
-        initial_guess = [1000, 150]
-        # Step 3: Eseguire il fitting
-        # y_data = df['0_1057']
-        # y_data = df[col]
-        filtered_df = df_to_consider_for_fit[
-            (df_to_consider_for_fit.index >= selected_range[0]) & (df_to_consider_for_fit.index <= selected_range[1])]
-        # params, covariance = curve_fit(exponential, df.index, df[col], p0=initial_guess)
-        params, covariance = curve_fit(exponential, filtered_df.index, filtered_df[col], p0=initial_guess)
-
-        # Stampare i parametri del fit
-        a, tau = params
-        # print(f"Parametri del fit: a={a}, b={tau}")
-        allTausDiff.append((tau / 24.0 - 6.6) / 6.6 * 100)
-        # Step 4: Calcolare i valori previsti dal modello
-        y_fit = exponential(df.index, *params)
+    global all_found_taus
 
     fig = px.bar(
         x=range(10),
-        y=allTausDiff,
+        y=[(x - real_t12) * 100 for x in all_found_taus if x != 0],
         labels={"x": "Channel", "y": "Diff T1/2 [%]"},
         title="Errori % su T1/2",
     )
 
     fig.update_layout(
-        # xaxis=dict(range=[0, 15]),  # Range fisso per l'asse X
         yaxis=dict(range=[-100, 100]),  # Range fisso per l'asse Y
-        # marker_color="orange",
     )
 
     fig.update_traces(marker_color="coral")
-    # fig = px.bar(
-    #    x=["Min", "Max"],
-    #    y=selected_range,
-    #    labels={"x": "Estremo", "y": "Valore"},
-    #    title="Valori Estremi del Range Selezionato",
-    # )
     return fig
 
 
