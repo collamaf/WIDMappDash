@@ -41,7 +41,7 @@ df = df.set_index('tempo_h')
 df['time_delta'] = (df.index - df.index[0]).total_seconds() / 60 / 60
 df = df.set_index('time_delta')
 # df = df.drop("tempo_h", axis=1)
-df_to_show = df
+df_to_consider_for_fit = df
 
 total_duration_min = len(df) * 100 / 60
 
@@ -69,7 +69,8 @@ def generate_scatterplot(x_range=None, generated_measurements=None):
     # else:
     #     df_to_show = df
     for col in df:
-        sns.scatterplot(data=df_to_show, x=df_to_show.index, y=df_to_show[col], alpha=0.4, label=col)
+        sns.scatterplot(data=df_to_consider_for_fit, x=df_to_consider_for_fit.index, y=df_to_consider_for_fit[col],
+                        alpha=0.4, label=col)
     # sns.scatterplot(data=df, x=df.index, y="4_1072", alpha=0.7)
     # sns.scatterplot(data=df, x=df.index, y="0_1057", alpha=0.7)
 
@@ -216,17 +217,17 @@ def update_title(slider_value):
 def update_dataset(selected_range, selected_fraction, meas_number):
     triggered_id = ctx.triggered_id
     # print("Trigger è stato", triggered_id)
-    global df_to_show  # Cosi recupero la globale e non ne creo una nuova
+    global df_to_consider_for_fit  # Cosi recupero la globale e non ne creo una nuova
 
     generated_measurements = generate_meas_intervals(meas_number, total_duration_min, minDistanceBetweenMeasInMin)
     for meas in generated_measurements:
         print(f"Misura generata: {meas:.1f} min")
     if selected_fraction != 100:
         print("Resamplo con frazione ", selected_fraction)
-        df_to_show = df.sample(frac=selected_fraction / 100)
+        df_to_consider_for_fit = df.sample(frac=selected_fraction / 100)
     else:
         print("Prendo tutto il df")
-        df_to_show = df
+        df_to_consider_for_fit = df
     img = generate_scatterplot(x_range=selected_range, generated_measurements=generated_measurements)
     buf = io.BytesIO()
     img.save(buf, format="PNG")
@@ -254,7 +255,8 @@ def update_all_taus_graph(selected_range, selected_fraction):
         # Step 3: Eseguire il fitting
         # y_data = df['0_1057']
         # y_data = df[col]
-        filtered_df = df_to_show[(df_to_show.index >= selected_range[0]) & (df_to_show.index <= selected_range[1])]
+        filtered_df = df_to_consider_for_fit[
+            (df_to_consider_for_fit.index >= selected_range[0]) & (df_to_consider_for_fit.index <= selected_range[1])]
         # params, covariance = curve_fit(exponential, df.index, df[col], p0=initial_guess)
         params, covariance = curve_fit(exponential, filtered_df.index, filtered_df[col], p0=initial_guess)
 
@@ -329,14 +331,15 @@ def update_all_taus_diff_graph(selected_range, selected_fraction):
     #     df_to_show = df.sample(frac=selected_fraction / 100, random_state=42)
     # else:
     #     df_to_show = df
-    print("Fitto dataset lungo: ", len(df_to_show))
+    print("Fitto dataset lungo: ", len(df_to_consider_for_fit))
     for col in df.columns:
         # Parametri iniziali per il fit
         initial_guess = [1000, 150]
         # Step 3: Eseguire il fitting
         # y_data = df['0_1057']
         # y_data = df[col]
-        filtered_df = df_to_show[(df_to_show.index >= selected_range[0]) & (df_to_show.index <= selected_range[1])]
+        filtered_df = df_to_consider_for_fit[
+            (df_to_consider_for_fit.index >= selected_range[0]) & (df_to_consider_for_fit.index <= selected_range[1])]
         # params, covariance = curve_fit(exponential, df.index, df[col], p0=initial_guess)
         params, covariance = curve_fit(exponential, filtered_df.index, filtered_df[col], p0=initial_guess)
 
