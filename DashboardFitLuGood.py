@@ -32,15 +32,15 @@ def generate_meas_intervals(N, M, L):
     return numbers
 
 
-#rate_Lu_IFO_soglie13_Overweekend2401_senzacorrezione
+# rate_Lu_IFO_soglie13_Overweekend2401_senzacorrezione
 # Leggi il file CSV
 df = pd.read_csv('rate_Lu_IFO_soglie13_Overweekend2401_senzacorrezione.csv', parse_dates=['tempo_h'])
-#df = pd.read_csv('Lu_IFO_2001_senzacorrezione.csv', parse_dates=['tempo_h'])
-#df['tempo_h'] = pd.to_datetime(df['tempo_h'], unit="h")
+# df = pd.read_csv('Lu_IFO_2001_senzacorrezione.csv', parse_dates=['tempo_h'])
+# df['tempo_h'] = pd.to_datetime(df['tempo_h'], unit="h")
 df = df.set_index('tempo_h')
 df['time_delta'] = (df.index - df.index[0]).total_seconds() / 60 / 60
 df = df.set_index('time_delta')
-#df = df.drop("tempo_h", axis=1)
+# df = df.drop("tempo_h", axis=1)
 df_to_show = df
 
 total_duration_min = len(df) * 100 / 60
@@ -49,12 +49,12 @@ numberOfMeas = 10
 measDurationInMin = 30
 minDistanceBetweenMeasInMin = 180
 
-#generated_measurements = generate_meas_intervals(numberOfMeas, total_duration_min, minDistanceBetweenMeasInMin)
+# generated_measurements = generate_meas_intervals(numberOfMeas, total_duration_min, minDistanceBetweenMeasInMin)
 
 print(
     f"Caricato dataset: è lungo {len(df)} misure, quindi {total_duration_min:.0f}min, {len(df) / 3600 * 100:.1f}h")
 
-#for meas in generated_measurements:
+# for meas in generated_measurements:
 #    print(f"Misura generata: {meas:.1f} min")
 # Inizializzazione dell'app Dash
 app = dash.Dash(__name__)
@@ -62,7 +62,7 @@ app = dash.Dash(__name__)
 
 # Funzione per generare un grafico scatter con Seaborn
 def generate_scatterplot(x_range=None, generated_measurements=None):
-    #print("entro in generate_scatterplot", x_range, selected_fraction)
+    # print("entro in generate_scatterplot", x_range, selected_fraction)
     plt.figure(figsize=(6, 4))
     # if selected_fraction:
     #     df_to_show = df.sample(frac=selected_fraction / 100, random_state=42)
@@ -70,17 +70,17 @@ def generate_scatterplot(x_range=None, generated_measurements=None):
     #     df_to_show = df
     for col in df:
         sns.scatterplot(data=df_to_show, x=df_to_show.index, y=df_to_show[col], alpha=0.4, label=col)
-    #sns.scatterplot(data=df, x=df.index, y="4_1072", alpha=0.7)
-    #sns.scatterplot(data=df, x=df.index, y="0_1057", alpha=0.7)
+    # sns.scatterplot(data=df, x=df.index, y="4_1072", alpha=0.7)
+    # sns.scatterplot(data=df, x=df.index, y="0_1057", alpha=0.7)
 
     #    sns.scatterplot(data=df, x="bill_length_mm", y="bill_depth_mm", hue="species", alpha=0.7)
     if x_range:
-        #plt.xlim(x_range)
+        # plt.xlim(x_range)
         plt.axvline(x=x_range[0], color="salmon", linestyle="--", linewidth=1, label="_nolegend_")
         plt.axvline(x=x_range[1], color="salmon", linestyle="--", linewidth=1, label="_nolegend_")
 
     for meas in generated_measurements:
-        #plt.axvline(x=meas/60, color="blue", linestyle="--", linewidth=1, label="Vertical Line")
+        # plt.axvline(x=meas/60, color="blue", linestyle="--", linewidth=1, label="Vertical Line")
         plt.axvspan((meas - measDurationInMin) / 60, (meas + measDurationInMin) / 60, color='limegreen', alpha=0.3,
                     label="_nolegend_")
 
@@ -88,7 +88,7 @@ def generate_scatterplot(x_range=None, generated_measurements=None):
     plt.xlabel("Time [h]")
     plt.legend(title="Sensors", bbox_to_anchor=(1.05, 1), loc='upper left')
     plt.tight_layout()
-    #plt.legend(title="Sensors", loc="upper left")
+    # plt.legend(title="Sensors", loc="upper left")
 
     buf = io.BytesIO()
     plt.savefig(buf, format="png")
@@ -215,8 +215,8 @@ def update_title(slider_value):
 )
 def update_scatterplot(selected_range, selected_fraction, meas_number):
     triggered_id = ctx.triggered_id
-    #print("Trigger è stato", triggered_id)
-    global df_to_show  #Cosi recupero la globale e non ne creo una nuova
+    # print("Trigger è stato", triggered_id)
+    global df_to_show  # Cosi recupero la globale e non ne creo una nuova
 
     generated_measurements = generate_meas_intervals(meas_number, total_duration_min, minDistanceBetweenMeasInMin)
     for meas in generated_measurements:
@@ -247,7 +247,7 @@ def update_all_taus_graph(selected_range, selected_fraction):
     #     df_to_show = df.sample(frac=selected_fraction / 100, random_state=42)
     # else:
     #     df_to_show = df
-    #print("Fitto dataset lungo: ", len(df_to_show))
+    # print("Fitto dataset lungo: ", len(df_to_show))
     for col in df.columns:
         # Parametri iniziali per il fit
         initial_guess = [1000, 150]
@@ -255,26 +255,26 @@ def update_all_taus_graph(selected_range, selected_fraction):
         # y_data = df['0_1057']
         # y_data = df[col]
         filtered_df = df_to_show[(df_to_show.index >= selected_range[0]) & (df_to_show.index <= selected_range[1])]
-        #params, covariance = curve_fit(exponential, df.index, df[col], p0=initial_guess)
+        # params, covariance = curve_fit(exponential, df.index, df[col], p0=initial_guess)
         params, covariance = curve_fit(exponential, filtered_df.index, filtered_df[col], p0=initial_guess)
 
         # Stampare i parametri del fit
         a, tau = params
-        #print(f"Parametri del fit: a={a}, b={tau}")
+        # print(f"Parametri del fit: a={a}, b={tau}")
         all_taus.append(tau / 24.0)
         # Step 4: Calcolare i valori previsti dal modello
         y_fit = exponential(df.index, *params)
 
         # Grafico con Seaborn
-    #fig = plt.figure(figsize=(10, 6))
-    #ax = sns.scatterplot(x=df.index, y=df["4_1072"], label=f'{1} data')  # Dati originali
+    # fig = plt.figure(figsize=(10, 6))
+    # ax = sns.scatterplot(x=df.index, y=df["4_1072"], label=f'{1} data')  # Dati originali
     # px.line(df,y=df.columns, title=f"All Rates Raw - {0}", color_discrete_sequence=px.colors.qualitative.Pastel)
-    #ax.set(xlabel="Time [h]", ylabel="Uncorrected Rate [CPS]")
-    #plt.plot(df.index, y_fit, label=f'{col} fit (a={a:.2f}, tau={tau / 24:.2f})')
-    #plt.legend(bbox_to_anchor=(1.05, 1), loc='upper left')
-    #plt.tight_layout()
-    #plt.savefig("AllDecay.pdf")
-    #print("CIAO: ", selected_range, all_taus)
+    # ax.set(xlabel="Time [h]", ylabel="Uncorrected Rate [CPS]")
+    # plt.plot(df.index, y_fit, label=f'{col} fit (a={a:.2f}, tau={tau / 24:.2f})')
+    # plt.legend(bbox_to_anchor=(1.05, 1), loc='upper left')
+    # plt.tight_layout()
+    # plt.savefig("AllDecay.pdf")
+    # print("CIAO: ", selected_range, all_taus)
     # channels = range(10)
     # data = pd.DataFrame({"Channel": channels, "T1/2 [d]": all_taus})
     # plt.figure(figsize=(10, 6))
@@ -289,7 +289,7 @@ def update_all_taus_graph(selected_range, selected_fraction):
     # plt.tight_layout()
     # fig = plt.gcf()
     #
-    #fig, axs = plt.subplots(nrows=2, ncols=1,figsize=(10, 6))
+    # fig, axs = plt.subplots(nrows=2, ncols=1,figsize=(10, 6))
     fig = px.bar(
         x=range(10),
         y=all_taus,
@@ -308,16 +308,16 @@ def update_all_taus_graph(selected_range, selected_fraction):
             )
         ]
     )
-    #fig = px.bar(
+    # fig = px.bar(
     #    x=["Min", "Max"],
     #    y=selected_range,
     #    labels={"x": "Estremo", "y": "Valore"},
     #    title="Valori Estremi del Range Selezionato",
-    #)
+    # )
     return fig
 
 
-#Callback per aggiornare il grafico dei valori estremi
+# Callback per aggiornare il grafico dei valori estremi
 @app.callback(
     Output("all-taus-diff", "figure"),
     Input("range-slider", "value"),
@@ -337,26 +337,26 @@ def update_all_taus_diff_graph(selected_range, selected_fraction):
         # y_data = df['0_1057']
         # y_data = df[col]
         filtered_df = df_to_show[(df_to_show.index >= selected_range[0]) & (df_to_show.index <= selected_range[1])]
-        #params, covariance = curve_fit(exponential, df.index, df[col], p0=initial_guess)
+        # params, covariance = curve_fit(exponential, df.index, df[col], p0=initial_guess)
         params, covariance = curve_fit(exponential, filtered_df.index, filtered_df[col], p0=initial_guess)
 
         # Stampare i parametri del fit
         a, tau = params
-        #print(f"Parametri del fit: a={a}, b={tau}")
+        # print(f"Parametri del fit: a={a}, b={tau}")
         allTausDiff.append((tau / 24.0 - 6.6) / 6.6 * 100)
         # Step 4: Calcolare i valori previsti dal modello
         y_fit = exponential(df.index, *params)
 
         # Grafico con Seaborn
-    #fig = plt.figure(figsize=(10, 6))
-    #ax = sns.scatterplot(x=df.index, y=df["4_1072"], label=f'{1} data')  # Dati originali
+    # fig = plt.figure(figsize=(10, 6))
+    # ax = sns.scatterplot(x=df.index, y=df["4_1072"], label=f'{1} data')  # Dati originali
     # px.line(df,y=df.columns, title=f"All Rates Raw - {0}", color_discrete_sequence=px.colors.qualitative.Pastel)
-    #ax.set(xlabel="Time [h]", ylabel="Uncorrected Rate [CPS]")
-    #plt.plot(df.index, y_fit, label=f'{col} fit (a={a:.2f}, tau={tau / 24:.2f})')
-    #plt.legend(bbox_to_anchor=(1.05, 1), loc='upper left')
-    #plt.tight_layout()
-    #plt.savefig("AllDecay.pdf")
-    #print("CIAO: ", selected_range, allTausDiff)
+    # ax.set(xlabel="Time [h]", ylabel="Uncorrected Rate [CPS]")
+    # plt.plot(df.index, y_fit, label=f'{col} fit (a={a:.2f}, tau={tau / 24:.2f})')
+    # plt.legend(bbox_to_anchor=(1.05, 1), loc='upper left')
+    # plt.tight_layout()
+    # plt.savefig("AllDecay.pdf")
+    # print("CIAO: ", selected_range, allTausDiff)
     # channels = range(10)
     # data = pd.DataFrame({"Channel": channels, "T1/2 [d]": allTaus})
     # plt.figure(figsize=(10, 6))
@@ -371,7 +371,7 @@ def update_all_taus_diff_graph(selected_range, selected_fraction):
     # plt.tight_layout()
     # fig = plt.gcf()
     #
-    #fig, axs = plt.subplots(nrows=2, ncols=1,figsize=(10, 6))
+    # fig, axs = plt.subplots(nrows=2, ncols=1,figsize=(10, 6))
     fig = px.bar(
         x=range(10),
         y=allTausDiff,
@@ -380,18 +380,18 @@ def update_all_taus_diff_graph(selected_range, selected_fraction):
     )
 
     fig.update_layout(
-        #xaxis=dict(range=[0, 15]),  # Range fisso per l'asse X
+        # xaxis=dict(range=[0, 15]),  # Range fisso per l'asse X
         yaxis=dict(range=[-100, 100]),  # Range fisso per l'asse Y
-        #marker_color="orange",
+        # marker_color="orange",
     )
 
     fig.update_traces(marker_color="coral")
-    #fig = px.bar(
+    # fig = px.bar(
     #    x=["Min", "Max"],
     #    y=selected_range,
     #    labels={"x": "Estremo", "y": "Valore"},
     #    title="Valori Estremi del Range Selezionato",
-    #)
+    # )
     return fig
 
 
