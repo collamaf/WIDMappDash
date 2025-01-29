@@ -49,6 +49,8 @@ numberOfMeas = 10
 measDurationInMin = 30
 minDistanceBetweenMeasInMin = 180
 
+all_found_taus = [None] * 10
+
 # generated_measurements = generate_meas_intervals(numberOfMeas, total_duration_min, minDistanceBetweenMeasInMin)
 
 print(
@@ -242,13 +244,17 @@ def update_dataset(selected_range, selected_fraction, meas_number):
     Input("fraction-slider", "value"),
 )
 def update_all_taus_graph(selected_range, selected_fraction):
-    all_taus = []
+    print("Entro in update_all_taus_graph")
+    # all_taus = []
+    global all_found_taus
+    # all_found_taus = []
     # if selected_fraction:
     #     df_to_show = df.sample(frac=selected_fraction / 100, random_state=42)
     # else:
     #     df_to_show = df
     # print("Fitto dataset lungo: ", len(df_to_show))
-    for col in df.columns:
+    # for col in df.columns:
+    for index, col in enumerate(df.columns):
         # Parametri iniziali per il fit
         initial_guess = [1000, 150]
         # Step 3: Eseguire il fitting
@@ -262,13 +268,14 @@ def update_all_taus_graph(selected_range, selected_fraction):
         # Stampare i parametri del fit
         a, tau = params
         # print(f"Parametri del fit: a={a}, b={tau}")
-        all_taus.append(tau / 24.0)
+        # all_found_taus.append(tau / 24.0)
+        all_found_taus[index] = (tau / 24.0)
         # Step 4: Calcolare i valori previsti dal modello
         y_fit = exponential(df.index, *params)
 
     fig = px.bar(
         x=range(10),
-        y=all_taus,
+        y=all_found_taus,
         labels={"x": "Channel", "y": "T1/2 [d]"},
         title="T1/2 fittati",
     )
