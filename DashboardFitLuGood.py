@@ -71,10 +71,7 @@ def generate_scatterplot(x_range=None, generated_measurements=None):
     for col in df:
         sns.scatterplot(data=df_to_consider_for_fit, x=df_to_consider_for_fit.index, y=df_to_consider_for_fit[col],
                         alpha=0.4, label=col)
-    # sns.scatterplot(data=df, x=df.index, y="4_1072", alpha=0.7)
-    # sns.scatterplot(data=df, x=df.index, y="0_1057", alpha=0.7)
 
-    #    sns.scatterplot(data=df, x="bill_length_mm", y="bill_depth_mm", hue="species", alpha=0.7)
     if x_range:
         # plt.xlim(x_range)
         plt.axvline(x=x_range[0], color="salmon", linestyle="--", linewidth=1, label="_nolegend_")
@@ -207,7 +204,7 @@ def update_title(slider_value):
     return f"Selezione Frazione: {slider_value}"  # Testo con valore dinamico
 
 
-# Callback per aggiornare il grafico scatterplot
+# Callback per aggiornare il dataset quando viene mosso qualche controllo
 @app.callback(
     Output("scatterplot", "src"),
     Input("range-slider", "value"),
@@ -222,12 +219,14 @@ def update_dataset(selected_range, selected_fraction, meas_number):
     generated_measurements = generate_meas_intervals(meas_number, total_duration_min, minDistanceBetweenMeasInMin)
     for meas in generated_measurements:
         print(f"Misura generata: {meas:.1f} min")
+
     if selected_fraction != 100:
         print("Resamplo con frazione ", selected_fraction)
         df_to_consider_for_fit = df.sample(frac=selected_fraction / 100)
     else:
         print("Prendo tutto il df")
         df_to_consider_for_fit = df
+
     img = generate_scatterplot(x_range=selected_range, generated_measurements=generated_measurements)
     buf = io.BytesIO()
     img.save(buf, format="PNG")
@@ -267,31 +266,6 @@ def update_all_taus_graph(selected_range, selected_fraction):
         # Step 4: Calcolare i valori previsti dal modello
         y_fit = exponential(df.index, *params)
 
-        # Grafico con Seaborn
-    # fig = plt.figure(figsize=(10, 6))
-    # ax = sns.scatterplot(x=df.index, y=df["4_1072"], label=f'{1} data')  # Dati originali
-    # px.line(df,y=df.columns, title=f"All Rates Raw - {0}", color_discrete_sequence=px.colors.qualitative.Pastel)
-    # ax.set(xlabel="Time [h]", ylabel="Uncorrected Rate [CPS]")
-    # plt.plot(df.index, y_fit, label=f'{col} fit (a={a:.2f}, tau={tau / 24:.2f})')
-    # plt.legend(bbox_to_anchor=(1.05, 1), loc='upper left')
-    # plt.tight_layout()
-    # plt.savefig("AllDecay.pdf")
-    # print("CIAO: ", selected_range, all_taus)
-    # channels = range(10)
-    # data = pd.DataFrame({"Channel": channels, "T1/2 [d]": all_taus})
-    # plt.figure(figsize=(10, 6))
-    # sns.barplot(data=data, x="Channel", y="T1/2 [d]", palette="viridis")
-    #
-    # # Personalizzazione
-    # plt.title("T1/2 fittati", fontsize=14)
-    # plt.xlabel("Channel", fontsize=12)
-    # plt.ylabel("T1/2 [d]", fontsize=12)
-    # plt.xticks(fontsize=10)
-    # plt.yticks(fontsize=10)
-    # plt.tight_layout()
-    # fig = plt.gcf()
-    #
-    # fig, axs = plt.subplots(nrows=2, ncols=1,figsize=(10, 6))
     fig = px.bar(
         x=range(10),
         y=all_taus,
@@ -350,31 +324,6 @@ def update_all_taus_diff_graph(selected_range, selected_fraction):
         # Step 4: Calcolare i valori previsti dal modello
         y_fit = exponential(df.index, *params)
 
-        # Grafico con Seaborn
-    # fig = plt.figure(figsize=(10, 6))
-    # ax = sns.scatterplot(x=df.index, y=df["4_1072"], label=f'{1} data')  # Dati originali
-    # px.line(df,y=df.columns, title=f"All Rates Raw - {0}", color_discrete_sequence=px.colors.qualitative.Pastel)
-    # ax.set(xlabel="Time [h]", ylabel="Uncorrected Rate [CPS]")
-    # plt.plot(df.index, y_fit, label=f'{col} fit (a={a:.2f}, tau={tau / 24:.2f})')
-    # plt.legend(bbox_to_anchor=(1.05, 1), loc='upper left')
-    # plt.tight_layout()
-    # plt.savefig("AllDecay.pdf")
-    # print("CIAO: ", selected_range, allTausDiff)
-    # channels = range(10)
-    # data = pd.DataFrame({"Channel": channels, "T1/2 [d]": allTaus})
-    # plt.figure(figsize=(10, 6))
-    # sns.barplot(data=data, x="Channel", y="T1/2 [d]", palette="viridis")
-    #
-    # # Personalizzazione
-    # plt.title("T1/2 fittati", fontsize=14)
-    # plt.xlabel("Channel", fontsize=12)
-    # plt.ylabel("T1/2 [d]", fontsize=12)
-    # plt.xticks(fontsize=10)
-    # plt.yticks(fontsize=10)
-    # plt.tight_layout()
-    # fig = plt.gcf()
-    #
-    # fig, axs = plt.subplots(nrows=2, ncols=1,figsize=(10, 6))
     fig = px.bar(
         x=range(10),
         y=allTausDiff,
