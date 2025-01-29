@@ -213,7 +213,7 @@ def update_title(slider_value):
     Input("fraction-slider", "value"),
     Input("meas-number-slider", "value"),
 )
-def update_scatterplot(selected_range, selected_fraction, meas_number):
+def update_dataset(selected_range, selected_fraction, meas_number):
     triggered_id = ctx.triggered_id
     # print("Trigger è stato", triggered_id)
     global df_to_show  # Cosi recupero la globale e non ne creo una nuova
