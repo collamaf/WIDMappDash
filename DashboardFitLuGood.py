@@ -14,8 +14,6 @@ from PIL import Image
 from scipy.optimize import curve_fit
 import random
 
-# Creiamo un dataset di esempio
-#df = sns.load_dataset("penguins").dropna()
 matplotlib.pyplot.switch_backend('Agg')
 
 
@@ -82,8 +80,9 @@ def generate_scatterplot(x_range=None, generated_measurements=None):
         plt.axvline(x=x_range[1], color="salmon", linestyle="--", linewidth=1, label="_nolegend_")
 
     for meas in generated_measurements:
-    #plt.axvline(x=meas/60, color="blue", linestyle="--", linewidth=1, label="Vertical Line")
-        plt.axvspan((meas-measDurationInMin)/60, (meas+measDurationInMin)/60, color='limegreen', alpha=0.3, label="_nolegend_")
+        #plt.axvline(x=meas/60, color="blue", linestyle="--", linewidth=1, label="Vertical Line")
+        plt.axvspan((meas - measDurationInMin) / 60, (meas + measDurationInMin) / 60, color='limegreen', alpha=0.3,
+                    label="_nolegend_")
 
     plt.ylabel("Raw Rate [CPS]")
     plt.xlabel("Time [h]")
@@ -180,62 +179,6 @@ app.layout = html.Div(
 )
 
 
-# app.layout = html.Div(
-#     style={"display": "flex"},
-#     children=[
-#         # Grafico A (scatterplot con Seaborn)
-#         html.H1("WIDMApp"),
-#         html.Div(
-#             style={"width": "50%"},
-#             children=[
-#                 html.H3("Grafico Dati"),
-#                 html.Img(id="scatterplot", style={"width": "100%"}, src=None),
-#                 html.Div(
-#                     children=[
-#                         html.H4("Selezione Range"),
-#                         dcc.RangeSlider(
-#                             id="range-slider",
-#                             min=df.index.min(),
-#                             max=df.index.max(),
-#                             step=0.1,
-#                             value=[df.index.min(), df.index.max()],
-#                             marks=None,
-#                             #marks={round(i, 1): f"{i:.1f}" for i in
-#                             #       np.linspace(df["bill_length_mm"].min(), df["bill_length_mm"].max(), 10)},
-#                         ),
-#                     ]
-#                 ),
-#                 html.Div(
-#                     children=[
-#                         html.H4("Selezione Frazione"),
-#                         dcc.Slider(
-#                             id="fraction-slider",
-#                             min=0,
-#                             max=100,
-#                             step=1,
-#                             value=100,
-#                             marks = {i: str(i) for i in range(0, 101, 2)},
-#                             # marks={round(i, 1): f"{i:.1f}" for i in
-#                             #       np.linspace(df["bill_length_mm"].min(), df["bill_length_mm"].max(), 10)},
-#                         ),
-#                     ]
-#                 ),
-#
-#             ],
-#         ),
-#         # Grafico B (valori estremi del selettore)
-#         html.Div(
-#             style={"width": "50%", "padding": "20px"},
-#             children=[
-#                 html.H3("Risultato fit"),
-#                 dcc.Graph(id="all-taus", style={"height": "400px"}),
-#                 dcc.Graph(id="all-taus-diff", style={"height": "400px"}),
-#             ],
-#         ),
-#     ],
-# )
-
-# Callback per aggiornare il numero di misure
 @app.callback(
     Output("meas-number", "children"),
     Input("meas-number-slider", "value"),
