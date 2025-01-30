@@ -49,7 +49,7 @@ numberOfMeas = 10
 measDurationInMin = 30
 minDistanceBetweenMeasInMin = 180
 
-all_found_taus = [0] * 10
+all_found_t12 = [0] * 10
 real_t12 = 6.6
 
 # generated_measurements = generate_meas_intervals(numberOfMeas, total_duration_min, minDistanceBetweenMeasInMin)
@@ -247,7 +247,7 @@ def update_dataset(selected_range, selected_fraction, meas_number):
 def update_all_taus_graph(selected_range, selected_fraction):
     print("Entro in update_all_taus_graph")
     # all_taus = []
-    global all_found_taus
+    global all_found_t12
     # all_found_taus = []
     # if selected_fraction:
     #     df_to_show = df.sample(frac=selected_fraction / 100, random_state=42)
@@ -255,28 +255,11 @@ def update_all_taus_graph(selected_range, selected_fraction):
     #     df_to_show = df
     # print("Fitto dataset lungo: ", len(df_to_show))
     # for col in df.columns:
-    for index, col in enumerate(df.columns):
-        # Parametri iniziali per il fit
-        initial_guess = [1000, 150]
-        # Step 3: Eseguire il fitting
-        # y_data = df['0_1057']
-        # y_data = df[col]
-        filtered_df = df_to_consider_for_fit[
-            (df_to_consider_for_fit.index >= selected_range[0]) & (df_to_consider_for_fit.index <= selected_range[1])]
-        # params, covariance = curve_fit(exponential, df.index, df[col], p0=initial_guess)
-        params, covariance = curve_fit(exponential, filtered_df.index, filtered_df[col], p0=initial_guess)
-
-        # Stampare i parametri del fit
-        a, tau = params
-        # print(f"Parametri del fit: a={a}, b={tau}")
-        # all_found_taus.append(tau / 24.0)
-        all_found_taus[index] = (tau / 24.0)
-        # Step 4: Calcolare i valori previsti dal modello
-        y_fit = exponential(df.index, *params)
+    perform_all_fits(all_found_t12, selected_range)
 
     fig = px.bar(
         x=range(10),
-        y=all_found_taus,
+        y=all_found_t12,
         labels={"x": "Channel", "y": "T1/2 [d]"},
         title="T1/2 fittati",
     )
@@ -292,14 +275,38 @@ def update_all_taus_graph(selected_range, selected_fraction):
             )
         ]
     )
+    fig.update_layout(
+        yaxis=dict(range=[min(all_found_t12) * 0.9, real_t12 * 1.1]),  # Range fisso per l'asse Y
+    )
     # fig = px.bar(
     #    x=["Min", "Max"],
     #    y=selected_range,
     #    labels={"x": "Estremo", "y": "Valore"},
     #    title="Valori Estremi del Range Selezionato",
     # )
-    print("Fatto", all_found_taus)
+    print("Fatto", all_found_t12)
     return fig
+
+
+def perform_all_fits(all_found_taus, selected_range):
+    for index, col in enumerate(df.columns):
+        # Parametri iniziali per il fit
+        initial_guess = [1000, 150]
+        # Step 3: Eseguire il fitting
+        # y_data = df['0_1057']
+        # y_data = df[col]
+        filtered_df = df_to_consider_for_fit[
+            (df_to_consider_for_fit.index >= selected_range[0]) & (df_to_consider_for_fit.index <= selected_range[1])]
+        params, covariance = curve_fit(exponential, filtered_df.index, filtered_df[col], p0=initial_guess)
+
+        # Stampare i parametri del fit
+        a, tau = params
+        # print(f"Parametri del fit: a={a}, b={tau}")
+        # all_found_taus.append(tau / 24.0)
+        all_found_taus[index] = (tau / 24.0)
+        print(f"Fit ch{index}: a = {a}, tau= {tau}\n")
+        # Step 4: Calcolare i valori previsti dal modello
+        # y_fit = exponential(df.index, *params)
 
 
 # Callback per aggiornare il grafico dei valori estremi
@@ -309,11 +316,11 @@ def update_all_taus_graph(selected_range, selected_fraction):
     Input("fraction-slider", "value"),
 )
 def update_all_taus_diff_graph(selected_range, selected_fraction):
-    global all_found_taus
+    global all_found_t12
 
     fig = px.bar(
         x=range(10),
-        y=[(x - real_t12) * 100 for x in all_found_taus if x != 0],
+        y=[(x - real_t12) * 100 for x in all_found_t12 if x != 0],
         labels={"x": "Channel", "y": "Diff T1/2 [%]"},
         title="Errori % su T1/2",
     )
