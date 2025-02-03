@@ -23,6 +23,7 @@ def exponential(x, a, b):
 
 
 def generate_meas_intervals(N, M, L):
+    print("Entro in generate_meas_intervals, ne faccio", N)
     numbers = []
     while len(numbers) < N:
         num = random.uniform(0, M)
@@ -48,6 +49,8 @@ total_duration_min = len(df) * 100 / 60
 numberOfMeas = 10
 measDurationInMin = 30
 minDistanceBetweenMeasInMin = 180
+
+generated_measurements = []
 
 all_found_t12 = [0] * 10
 real_t12 = 6.6
@@ -185,8 +188,8 @@ app.layout = html.Div(
     Input("meas-number-slider", "value"),
 )
 def update_meas_number(slider_value):
-    numberOfMeas = slider_value
-    return f"Selezione Numero misure: {numberOfMeas}"
+    number_of_meas = slider_value
+    return f"Selezione Numero misure: {number_of_meas}"
 
 
 # Callback per aggiornare il valore del range
@@ -215,20 +218,39 @@ def update_selected_fraction(slider_value):
     Input("meas-number-slider", "value"),
 )
 def update_dataset(selected_range, selected_fraction, meas_number):
+    print(f"Entro in update_dataset chiamato da {ctx.triggered_id}\n\n")
     triggered_id = ctx.triggered_id
     # print("Trigger è stato", triggered_id)
     global df_to_consider_for_fit  # Cosi recupero la globale e non ne creo una nuova
+    global generated_measurements
 
     generated_measurements = generate_meas_intervals(meas_number, total_duration_min, minDistanceBetweenMeasInMin)
-    for meas in generated_measurements:
-        print(f"Misura generata: {meas:.1f} min")
+    # for meas in generated_measurements:
+    #    print(f"Misura generata: {meas:.1f} min")
 
-    if selected_fraction != 100:
-        print("Resamplo con frazione ", selected_fraction)
-        df_to_consider_for_fit = df.sample(frac=selected_fraction / 100)
+    indices_couples = []
+    for generate_meas in generated_measurements:
+        nearest_index_start = df.index[abs((df.index - (generate_meas - measDurationInMin) / 60.0)).argmin()]
+        nearest_index_end = df.index[abs((df.index - (generate_meas + measDurationInMin) / 60.0)).argmin()]
+        row_number_start = df.index.get_loc(nearest_index_start)
+        row_number_end = df.index.get_loc(nearest_index_end)
+        indices_couples.append([row_number_start, row_number_end])
+        #    nearest_row = df.loc[nearest_index]
+
+        print(
+            f"\tCerco {generate_meas:.0f}min ({generate_meas / 60.0:.2f}h) (+- {measDurationInMin}min), indice piu vicino {nearest_index_start:.2f}-{nearest_index_end:.2f}, numero riga: {row_number_start}-{row_number_end}\n\t\tLista:{len(indices_couples)}-{indices_couples}")
+
+    if len(generated_measurements) != 20:
+        # Seleziona e concatena le righe
+        df_to_consider_for_fit = pd.concat([df.iloc[start:end] for start, end in indices_couples])
+        print("Prendo solo misure:", len(df_to_consider_for_fit))
     else:
-        print("Prendo tutto il df")
-        df_to_consider_for_fit = df
+        if selected_fraction != 100:
+            print("Resamplo con frazione ", selected_fraction)
+            df_to_consider_for_fit = df.sample(frac=selected_fraction / 100)
+        else:
+            print("Prendo tutto il df")
+            df_to_consider_for_fit = df
 
     img = generate_scatterplot(x_range=selected_range, generated_measurements=generated_measurements)
     buf = io.BytesIO()
@@ -243,9 +265,10 @@ def update_dataset(selected_range, selected_fraction, meas_number):
     Output("all-taus", "figure"),
     Input("range-slider", "value"),
     Input("fraction-slider", "value"),
+    Input("meas-number-slider", "value"),
 )
-def update_all_taus_graph(selected_range, selected_fraction):
-    print("Entro in update_all_taus_graph")
+def update_all_taus_graph(selected_range, selected_fraction, selected_num_meas):
+    print("Entro in update_all_taus_graph chiamato da", ctx.triggered_id)
     # all_taus = []
     global all_found_t12
     # all_found_taus = []
@@ -276,7 +299,7 @@ def update_all_taus_graph(selected_range, selected_fraction):
         ]
     )
     fig.update_layout(
-        yaxis=dict(range=[min(all_found_t12) * 0.9, real_t12 * 1.1]),  # Range fisso per l'asse Y
+        yaxis=dict(range=[min(all_found_t12) * 0.95, max(all_found_t12) * 1.05]),  # Range fisso per l'asse Y
     )
     # fig = px.bar(
     #    x=["Min", "Max"],
@@ -289,6 +312,7 @@ def update_all_taus_graph(selected_range, selected_fraction):
 
 
 def perform_all_fits(all_found_taus, selected_range):
+    print("Entro in perform_all_fits")
     for index, col in enumerate(df.columns):
         # Parametri iniziali per il fit
         initial_guess = [1000, 150]
@@ -304,7 +328,7 @@ def perform_all_fits(all_found_taus, selected_range):
         # print(f"Parametri del fit: a={a}, b={tau}")
         # all_found_taus.append(tau / 24.0)
         all_found_taus[index] = (tau / 24.0)
-        print(f"Fit ch{index}: a = {a}, tau= {tau}\n")
+        # print(f"Fit ch{index}: a = {a}, tau= {tau}\n")
         # Step 4: Calcolare i valori previsti dal modello
         # y_fit = exponential(df.index, *params)
 
@@ -314,8 +338,10 @@ def perform_all_fits(all_found_taus, selected_range):
     Output("all-taus-diff", "figure"),
     Input("range-slider", "value"),
     Input("fraction-slider", "value"),
+    Input("meas-number-slider", "value"),
 )
-def update_all_taus_diff_graph(selected_range, selected_fraction):
+def update_all_taus_diff_graph(selected_range, selected_fraction, selected_num_meas):
+    print("Entro in update_all_taus_diff_graph, chiamato da", ctx.triggered_id)
     global all_found_t12
 
     fig = px.bar(
