@@ -98,7 +98,10 @@ print(
 app = dash.Dash(__name__)
 server = app.server
 
+<<<<<<< HEAD
 
+=======
+>>>>>>> 4b93c97fb37a73efb45df577f552453e71b73cb0
 # Funzione per generare un grafico scatter con Seaborn
 def generate_scatterplot(x_range=None):
     # print("entro in generate_scatterplot", x_range, selected_fraction)
