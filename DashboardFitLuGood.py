@@ -44,11 +44,11 @@ def perform_all_fits(all_found_taus, selected_range):
         # y_fit = exponential(df.index, *params)
 
 
-def generate_meas_intervals(meas_to_gen, max_value, min_distance):
+def generate_meas_intervals(meas_to_gen, min_value, max_value, min_distance):
     print("Entro in generate_meas_intervals, ne faccio", meas_to_gen)
     numbers = []
     while len(numbers) < meas_to_gen:
-        num = random.uniform(0, max_value)
+        num = random.uniform(min_value, max_value)
         # Check if the number is sufficiently far from all others
         if all(abs(num - existing) >= min_distance for existing in numbers):
             numbers.append(num)
@@ -253,7 +253,7 @@ def update_texts(meas_value, range_value, fraction_value):
     Input("meas-number-slider", "value"),
     Input("only-meas-checkbox", "value"),
 )
-def update_plots(selected_range, selected_fraction, meas_number, use_only_meas):
+def update_plots(selected_range, selected_fraction, meas_to_generate, use_only_meas):
     print(f"Entro in update_plots chiamato da {ctx.triggered_id}\n\n")
     # triggered_id = ctx.triggered_id
     # print("Trigger è stato", triggered_id)
@@ -261,7 +261,8 @@ def update_plots(selected_range, selected_fraction, meas_number, use_only_meas):
     global generated_measurements
 
     """Genera le misure sperimentali e trovane gli indici estremi nel df"""
-    generated_measurements = generate_meas_intervals(meas_number, total_duration_min, minDistanceBetweenMeasInMin)
+    generated_measurements = generate_meas_intervals(meas_to_generate, min(selected_range) * 60
+                                                     , max(selected_range) * 60, minDistanceBetweenMeasInMin)
     # for meas in generated_measurements:
     #    print(f"Misura generata: {meas:.1f} min")
     indices_couples = []
@@ -280,7 +281,7 @@ def update_plots(selected_range, selected_fraction, meas_number, use_only_meas):
     if use_only_meas:
         # Seleziona e concatena le righe
         df_to_consider_for_fit = pd.concat([df.iloc[start:end] for start, end in indices_couples])
-        print(f"Prendo solo {len(df_to_consider_for_fit)} misure da 100s ({meas_number} da {measDurationInMin})")
+        print(f"Prendo solo {len(df_to_consider_for_fit)} misure da 100s ({meas_to_generate} da {measDurationInMin})")
     else:
         if selected_fraction != 100:
             print("Resamplo con frazione ", selected_fraction)
