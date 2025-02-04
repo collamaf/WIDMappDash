@@ -22,20 +22,52 @@ def exponential(x, a, b):
     return a * np.exp(-x / (b / 0.69314))
 
 
-def generate_meas_intervals(N, M, L):
-    print("Entro in generate_meas_intervals, ne faccio", N)
+def perform_all_fits(all_found_taus, selected_range):
+    print("Entro in perform_all_fits")
+    for index, col in enumerate(df.columns):
+        # Parametri iniziali per il fit
+        initial_guess = [1000, 150]
+        # Step 3: Eseguire il fitting
+        # y_data = df['0_1057']
+        # y_data = df[col]
+        filtered_df = df_to_consider_for_fit[
+            (df_to_consider_for_fit.index >= selected_range[0]) & (df_to_consider_for_fit.index <= selected_range[1])]
+        params, covariance = curve_fit(exponential, filtered_df.index, filtered_df[col], p0=initial_guess)
+
+        # Stampare i parametri del fit
+        a, tau = params
+        # print(f"Parametri del fit: a={a}, b={tau}")
+        # all_found_taus.append(tau / 24.0)
+        all_found_taus[index] = (tau / 24.0)
+        # print(f"Fit ch{index}: a = {a}, tau= {tau}\n")
+        # Step 4: Calcolare i valori previsti dal modello
+        # y_fit = exponential(df.index, *params)
+
+
+def generate_meas_intervals(meas_to_gen, max_value, min_distance):
+    print("Entro in generate_meas_intervals, ne faccio", meas_to_gen)
     numbers = []
-    while len(numbers) < N:
-        num = random.uniform(0, M)
+    while len(numbers) < meas_to_gen:
+        num = random.uniform(0, max_value)
         # Check if the number is sufficiently far from all others
-        if all(abs(num - existing) >= L for existing in numbers):
+        if all(abs(num - existing) >= min_distance for existing in numbers):
             numbers.append(num)
     return numbers
 
 
+# Caricamento dati con gestione errori
+try:
+    df = pd.read_csv('rate_Lu_IFO_soglie13_Overweekend2401_senzacorrezione.csv', parse_dates=['tempo_h'])
+except FileNotFoundError:
+    print("Errore: File CSV non trovato.")
+    df = pd.DataFrame()
+except Exception as e:
+    print(f"Errore nel caricamento CSV: {e}")
+    df = pd.DataFrame()
+
 # rate_Lu_IFO_soglie13_Overweekend2401_senzacorrezione
 # Leggi il file CSV
-df = pd.read_csv('rate_Lu_IFO_soglie13_Overweekend2401_senzacorrezione.csv', parse_dates=['tempo_h'])
+# df = pd.read_csv('rate_Lu_IFO_soglie13_Overweekend2401_senzacorrezione.csv', parse_dates=['tempo_h'])
 # df = pd.read_csv('Lu_IFO_2001_senzacorrezione.csv', parse_dates=['tempo_h'])
 # df['tempo_h'] = pd.to_datetime(df['tempo_h'], unit="h")
 df = df.set_index('tempo_h')
@@ -67,7 +99,7 @@ app = dash.Dash(__name__)
 
 
 # Funzione per generare un grafico scatter con Seaborn
-def generate_scatterplot(x_range=None, generated_measurements=None):
+def generate_scatterplot(x_range=None):
     # print("entro in generate_scatterplot", x_range, selected_fraction)
     plt.figure(figsize=(6, 4))
     # if selected_fraction:
@@ -155,13 +187,21 @@ app.layout = html.Div(
                         ),
                         html.Div(
                             children=[
-                                html.H4("Selezione Numero misure", id="meas-number"),
+                                html.Div([
+                                    html.H4("Selezione Numero misure", id="meas-number"),
+                                    dcc.Checklist(
+                                        id='only-meas-checkbox',
+                                        options=[{'label': 'Solo misure', 'value': 'filter'}],
+                                        value=[],
+                                        inline=True
+                                    )
+                                ], style={'display': 'flex', 'align-items': 'center', 'gap': '10px'}),
                                 dcc.Slider(
                                     id="meas-number-slider",
                                     min=1,
                                     max=20,
                                     step=1,
-                                    value=10,
+                                    value=5,
                                     marks={i: str(i) for i in range(0, 51, 2)},
                                 ),
                             ]
@@ -213,21 +253,24 @@ def update_selected_fraction(slider_value):
 # Callback per aggiornare il dataset quando viene mosso qualche controllo
 @app.callback(
     Output("scatterplot", "src"),
+    Output("all-taus", "figure"),
+    Output("all-taus-diff", "figure"),
     Input("range-slider", "value"),
     Input("fraction-slider", "value"),
     Input("meas-number-slider", "value"),
+    Input("only-meas-checkbox", "value"),
 )
-def update_dataset(selected_range, selected_fraction, meas_number):
-    print(f"Entro in update_dataset chiamato da {ctx.triggered_id}\n\n")
-    triggered_id = ctx.triggered_id
+def update_plots(selected_range, selected_fraction, meas_number, use_only_meas):
+    print(f"Entro in update_plots chiamato da {ctx.triggered_id}\n\n")
+    # triggered_id = ctx.triggered_id
     # print("Trigger è stato", triggered_id)
     global df_to_consider_for_fit  # Cosi recupero la globale e non ne creo una nuova
     global generated_measurements
 
+    """Genera le misure sperimentali e trovane gli indici estremi nel df"""
     generated_measurements = generate_meas_intervals(meas_number, total_duration_min, minDistanceBetweenMeasInMin)
     # for meas in generated_measurements:
     #    print(f"Misura generata: {meas:.1f} min")
-
     indices_couples = []
     for generate_meas in generated_measurements:
         nearest_index_start = df.index[abs((df.index - (generate_meas - measDurationInMin) / 60.0)).argmin()]
@@ -240,10 +283,12 @@ def update_dataset(selected_range, selected_fraction, meas_number):
         print(
             f"\tCerco {generate_meas:.0f}min ({generate_meas / 60.0:.2f}h) (+- {measDurationInMin}min), indice piu vicino {nearest_index_start:.2f}-{nearest_index_end:.2f}, numero riga: {row_number_start}-{row_number_end}\n\t\tLista:{len(indices_couples)}-{indices_couples}")
 
-    if len(generated_measurements) != 20:
+    """Filtra il dataset da usare"""
+
+    if use_only_meas:  ##TODO: mettere valore senstao
         # Seleziona e concatena le righe
         df_to_consider_for_fit = pd.concat([df.iloc[start:end] for start, end in indices_couples])
-        print("Prendo solo misure:", len(df_to_consider_for_fit))
+        print(f"Prendo solo {len(df_to_consider_for_fit)} misure da 100s ({meas_number} da {measDurationInMin})")
     else:
         if selected_fraction != 100:
             print("Resamplo con frazione ", selected_fraction)
@@ -252,41 +297,24 @@ def update_dataset(selected_range, selected_fraction, meas_number):
             print("Prendo tutto il df")
             df_to_consider_for_fit = df
 
-    img = generate_scatterplot(x_range=selected_range, generated_measurements=generated_measurements)
+    """Genera il grafico generale dei dati"""
+    img_data = generate_scatterplot(x_range=selected_range)
     buf = io.BytesIO()
-    img.save(buf, format="PNG")
+    img_data.save(buf, format="PNG")
     buf.seek(0)
-    encoded_img = "data:image/png;base64," + base64.b64encode(buf.getvalue()).decode("utf-8")
-    return encoded_img
+    encoded_img_data = "data:image/png;base64," + base64.b64encode(buf.getvalue()).decode("utf-8")
 
-
-# Callback per aggiornare il grafico dei valori estremi
-@app.callback(
-    Output("all-taus", "figure"),
-    Input("range-slider", "value"),
-    Input("fraction-slider", "value"),
-    Input("meas-number-slider", "value"),
-)
-def update_all_taus_graph(selected_range, selected_fraction, selected_num_meas):
-    print("Entro in update_all_taus_graph chiamato da", ctx.triggered_id)
-    # all_taus = []
+    """Genera il grafico dei t1/2"""
     global all_found_t12
-    # all_found_taus = []
-    # if selected_fraction:
-    #     df_to_show = df.sample(frac=selected_fraction / 100, random_state=42)
-    # else:
-    #     df_to_show = df
-    # print("Fitto dataset lungo: ", len(df_to_show))
-    # for col in df.columns:
     perform_all_fits(all_found_t12, selected_range)
 
-    fig = px.bar(
+    fig_t12 = px.bar(
         x=range(10),
         y=all_found_t12,
         labels={"x": "Channel", "y": "T1/2 [d]"},
         title="T1/2 fittati",
     )
-    fig.update_layout(
+    fig_t12.update_layout(
         shapes=[
             dict(
                 type="line",
@@ -298,66 +326,107 @@ def update_all_taus_graph(selected_range, selected_fraction, selected_num_meas):
             )
         ]
     )
-    fig.update_layout(
+    fig_t12.update_layout(
         yaxis=dict(range=[min(all_found_t12) * 0.95, max(all_found_t12) * 1.05]),  # Range fisso per l'asse Y
     )
-    # fig = px.bar(
-    #    x=["Min", "Max"],
-    #    y=selected_range,
-    #    labels={"x": "Estremo", "y": "Valore"},
-    #    title="Valori Estremi del Range Selezionato",
-    # )
-    print("Fatto", all_found_t12)
-    return fig
 
-
-def perform_all_fits(all_found_taus, selected_range):
-    print("Entro in perform_all_fits")
-    for index, col in enumerate(df.columns):
-        # Parametri iniziali per il fit
-        initial_guess = [1000, 150]
-        # Step 3: Eseguire il fitting
-        # y_data = df['0_1057']
-        # y_data = df[col]
-        filtered_df = df_to_consider_for_fit[
-            (df_to_consider_for_fit.index >= selected_range[0]) & (df_to_consider_for_fit.index <= selected_range[1])]
-        params, covariance = curve_fit(exponential, filtered_df.index, filtered_df[col], p0=initial_guess)
-
-        # Stampare i parametri del fit
-        a, tau = params
-        # print(f"Parametri del fit: a={a}, b={tau}")
-        # all_found_taus.append(tau / 24.0)
-        all_found_taus[index] = (tau / 24.0)
-        # print(f"Fit ch{index}: a = {a}, tau= {tau}\n")
-        # Step 4: Calcolare i valori previsti dal modello
-        # y_fit = exponential(df.index, *params)
-
-
-# Callback per aggiornare il grafico dei valori estremi
-@app.callback(
-    Output("all-taus-diff", "figure"),
-    Input("range-slider", "value"),
-    Input("fraction-slider", "value"),
-    Input("meas-number-slider", "value"),
-)
-def update_all_taus_diff_graph(selected_range, selected_fraction, selected_num_meas):
-    print("Entro in update_all_taus_diff_graph, chiamato da", ctx.triggered_id)
-    global all_found_t12
-
-    fig = px.bar(
+    """Genera il grafico dei t1/2 DIFF"""
+    fig_t12_diff = px.bar(
         x=range(10),
         y=[(x - real_t12) * 100 for x in all_found_t12 if x != 0],
         labels={"x": "Channel", "y": "Diff T1/2 [%]"},
         title="Errori % su T1/2",
     )
 
-    fig.update_layout(
+    fig_t12_diff.update_layout(
         yaxis=dict(range=[-100, 100]),  # Range fisso per l'asse Y
     )
 
-    fig.update_traces(marker_color="coral")
-    return fig
+    fig_t12_diff.update_traces(marker_color="coral")
 
+    print("Risultato fit t1/2:\n", all_found_t12)
+    print("Risultato fit err:\n", [(x - real_t12) * 100 for x in all_found_t12 if x != 0])
+
+    return encoded_img_data, fig_t12, fig_t12_diff
+
+
+#
+# # Callback per aggiornare il grafico dei valori estremi
+# @app.callback(
+#     Output("all-taus", "figure"),
+#     Input("range-slider", "value"),
+#     Input("fraction-slider", "value"),
+#     Input("meas-number-slider", "value"),
+# )
+# def update_all_taus_graph(selected_range, selected_fraction, selected_num_meas):
+#     print("Entro in update_all_taus_graph chiamato da", ctx.triggered_id)
+#     # all_taus = []
+#     global all_found_t12
+#     # all_found_taus = []
+#     # if selected_fraction:
+#     #     df_to_show = df.sample(frac=selected_fraction / 100, random_state=42)
+#     # else:
+#     #     df_to_show = df
+#     # print("Fitto dataset lungo: ", len(df_to_show))
+#     # for col in df.columns:
+#     perform_all_fits(all_found_t12, selected_range)
+#
+#     fig = px.bar(
+#         x=range(10),
+#         y=all_found_t12,
+#         labels={"x": "Channel", "y": "T1/2 [d]"},
+#         title="T1/2 fittati",
+#     )
+#     fig.update_layout(
+#         shapes=[
+#             dict(
+#                 type="line",
+#                 x0=-0.5,  # Inizia appena prima della prima barra
+#                 x1=10 - 0.5,  # Termina dopo l'ultima barra
+#                 y0=6.6,  # Altezza della linea
+#                 y1=6.6,  # Altezza della linea
+#                 line=dict(color="salmon", width=2, dash="dash"),  # Stile della linea
+#             )
+#         ]
+#     )
+#     fig.update_layout(
+#         yaxis=dict(range=[min(all_found_t12) * 0.95, max(all_found_t12) * 1.05]),  # Range fisso per l'asse Y
+#     )
+#     # fig = px.bar(
+#     #    x=["Min", "Max"],
+#     #    y=selected_range,
+#     #    labels={"x": "Estremo", "y": "Valore"},
+#     #    title="Valori Estremi del Range Selezionato",
+#     # )
+#     print("Fatto", all_found_t12)
+#     return fig
+#
+#
+# # Callback per aggiornare il grafico dei valori estremi
+# @app.callback(
+#     Output("all-taus-diff", "figure"),
+#     Input("range-slider", "value"),
+#     Input("fraction-slider", "value"),
+#     Input("meas-number-slider", "value"),
+# )
+# def update_all_taus_diff_graph(selected_range, selected_fraction, selected_num_meas):
+#     print("Entro in update_all_taus_diff_graph, chiamato da", ctx.triggered_id)
+#     global all_found_t12
+#
+#     fig = px.bar(
+#         x=range(10),
+#         y=[(x - real_t12) * 100 for x in all_found_t12 if x != 0],
+#         labels={"x": "Channel", "y": "Diff T1/2 [%]"},
+#         title="Errori % su T1/2",
+#     )
+#
+#     fig.update_layout(
+#         yaxis=dict(range=[-100, 100]),  # Range fisso per l'asse Y
+#     )
+#
+#     fig.update_traces(marker_color="coral")
+#     return fig
+#
 
 # Esecuzione dell'app
 if __name__ == "__main__":
