@@ -224,30 +224,23 @@ app.layout = html.Div(
 
 
 @app.callback(
-    Output("meas-number", "children"),
-    Input("meas-number-slider", "value"),
+    [
+        Output("meas-number", "children"),
+        Output("range-values", "children"),
+        Output("fraction-title", "children")
+    ],
+    [
+        Input("meas-number-slider", "value"),
+        Input("range-slider", "value"),
+        Input("fraction-slider", "value")
+    ]
 )
-def update_meas_number(slider_value):
-    number_of_meas = slider_value
-    return f"Selezione Numero misure: {number_of_meas}"
-
-
-# Callback per aggiornare il valore del range
-@app.callback(
-    Output("range-values", "children"),
-    Input("range-slider", "value"),
-)
-def update_range_values(slider_value):
-    return f"Range selezionato: {slider_value} h"
-
-
-# Callback per aggiornare il titolo H4
-@app.callback(
-    Output("fraction-title", "children"),
-    Input("fraction-slider", "value"),
-)
-def update_selected_fraction(slider_value):
-    return f"Selezione Frazione: {slider_value}"  # Testo con valore dinamico
+def update_texts(meas_value, range_value, fraction_value):
+    return (
+        f"Selezione Numero misure: {meas_value}",
+        f"Range selezionato: {range_value} h",
+        f"Selezione Frazione: {fraction_value}"
+    )
 
 
 # Callback per aggiornare il dataset quando viene mosso qualche controllo
@@ -284,7 +277,6 @@ def update_plots(selected_range, selected_fraction, meas_number, use_only_meas):
             f"\tCerco {generate_meas:.0f}min ({generate_meas / 60.0:.2f}h) (+- {measDurationInMin}min), indice piu vicino {nearest_index_start:.2f}-{nearest_index_end:.2f}, numero riga: {row_number_start}-{row_number_end}\n\t\tLista:{len(indices_couples)}-{indices_couples}")
 
     """Filtra il dataset da usare"""
-
     if use_only_meas:
         # Seleziona e concatena le righe
         df_to_consider_for_fit = pd.concat([df.iloc[start:end] for start, end in indices_couples])
