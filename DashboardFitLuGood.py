@@ -96,6 +96,7 @@ print(
 #    print(f"Misura generata: {meas:.1f} min")
 # Inizializzazione dell'app Dash
 app = dash.Dash(__name__)
+server = app.server
 
 
 # Funzione per generare un grafico scatter con Seaborn
@@ -204,6 +205,14 @@ app.layout = html.Div(
                                     value=5,
                                     marks={i: str(i) for i in range(0, 51, 2)},
                                 ),
+                                dcc.Slider(
+                                    id="meas-duration-slider",
+                                    min=1,
+                                    max=60,
+                                    step=5,
+                                    value=30,
+                                    marks={i: str(i) for i in range(0, 61, 2)},
+                                ),
                             ]
                         ),
                     ],
@@ -231,13 +240,14 @@ app.layout = html.Div(
     ],
     [
         Input("meas-number-slider", "value"),
+        Input("meas-duration-slider", "value"),
         Input("range-slider", "value"),
         Input("fraction-slider", "value")
     ]
 )
-def update_texts(meas_value, range_value, fraction_value):
+def update_texts(meas_value, meas_duration_value, range_value, fraction_value):
     return (
-        f"Selezione Numero misure: {meas_value}",
+        f"Selezione Numero misure: {meas_value} da {meas_duration_value} min",
         f"Range selezionato: {range_value} h",
         f"Selezione Frazione: {fraction_value}"
     )
@@ -251,15 +261,17 @@ def update_texts(meas_value, range_value, fraction_value):
     Input("range-slider", "value"),
     Input("fraction-slider", "value"),
     Input("meas-number-slider", "value"),
+    Input("meas-duration-slider", "value"),
     Input("only-meas-checkbox", "value"),
 )
-def update_plots(selected_range, selected_fraction, meas_to_generate, use_only_meas):
+def update_plots(selected_range, selected_fraction, meas_to_generate, meas_duration, use_only_meas):
     print(f"Entro in update_plots chiamato da {ctx.triggered_id}\n\n")
     # triggered_id = ctx.triggered_id
     # print("Trigger è stato", triggered_id)
     global df_to_consider_for_fit  # Cosi recupero la globale e non ne creo una nuova
     global generated_measurements
-
+    global measDurationInMin
+    measDurationInMin = meas_duration
     """Genera le misure sperimentali e trovane gli indici estremi nel df"""
     generated_measurements = generate_meas_intervals(meas_to_generate, min(selected_range) * 60
                                                      , max(selected_range) * 60, minDistanceBetweenMeasInMin)
@@ -267,15 +279,15 @@ def update_plots(selected_range, selected_fraction, meas_to_generate, use_only_m
     #    print(f"Misura generata: {meas:.1f} min")
     indices_couples = []
     for generate_meas in generated_measurements:
-        nearest_index_start = df.index[abs((df.index - (generate_meas - measDurationInMin) / 60.0)).argmin()]
-        nearest_index_end = df.index[abs((df.index - (generate_meas + measDurationInMin) / 60.0)).argmin()]
+        nearest_index_start = df.index[abs((df.index - (generate_meas - measDurationInMin / 2) / 60.0)).argmin()]
+        nearest_index_end = df.index[abs((df.index - (generate_meas + measDurationInMin / 2) / 60.0)).argmin()]
         row_number_start = df.index.get_loc(nearest_index_start)
         row_number_end = df.index.get_loc(nearest_index_end)
         indices_couples.append([row_number_start, row_number_end])
         #    nearest_row = df.loc[nearest_index]
 
         print(
-            f"\tCerco {generate_meas:.0f}min ({generate_meas / 60.0:.2f}h) (+- {measDurationInMin}min), indice piu vicino {nearest_index_start:.2f}-{nearest_index_end:.2f}, numero riga: {row_number_start}-{row_number_end}\n\t\tLista:{len(indices_couples)}-{indices_couples}")
+            f"\tCerco {generate_meas:.0f}min ({generate_meas / 60.0:.2f}h) (+- {measDurationInMin / 2}min), indice piu vicino {nearest_index_start:.2f}-{nearest_index_end:.2f}, numero riga: {row_number_start}-{row_number_end}\n\t\tLista:{len(indices_couples)}-{indices_couples}")
 
     """Filtra il dataset da usare"""
     if use_only_meas:
