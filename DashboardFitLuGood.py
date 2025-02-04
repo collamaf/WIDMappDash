@@ -285,7 +285,7 @@ def update_plots(selected_range, selected_fraction, meas_number, use_only_meas):
 
     """Filtra il dataset da usare"""
 
-    if use_only_meas:  ##TODO: mettere valore senstao
+    if use_only_meas:
         # Seleziona e concatena le righe
         df_to_consider_for_fit = pd.concat([df.iloc[start:end] for start, end in indices_couples])
         print(f"Prendo solo {len(df_to_consider_for_fit)} misure da 100s ({meas_number} da {measDurationInMin})")
@@ -349,84 +349,6 @@ def update_plots(selected_range, selected_fraction, meas_number, use_only_meas):
 
     return encoded_img_data, fig_t12, fig_t12_diff
 
-
-#
-# # Callback per aggiornare il grafico dei valori estremi
-# @app.callback(
-#     Output("all-taus", "figure"),
-#     Input("range-slider", "value"),
-#     Input("fraction-slider", "value"),
-#     Input("meas-number-slider", "value"),
-# )
-# def update_all_taus_graph(selected_range, selected_fraction, selected_num_meas):
-#     print("Entro in update_all_taus_graph chiamato da", ctx.triggered_id)
-#     # all_taus = []
-#     global all_found_t12
-#     # all_found_taus = []
-#     # if selected_fraction:
-#     #     df_to_show = df.sample(frac=selected_fraction / 100, random_state=42)
-#     # else:
-#     #     df_to_show = df
-#     # print("Fitto dataset lungo: ", len(df_to_show))
-#     # for col in df.columns:
-#     perform_all_fits(all_found_t12, selected_range)
-#
-#     fig = px.bar(
-#         x=range(10),
-#         y=all_found_t12,
-#         labels={"x": "Channel", "y": "T1/2 [d]"},
-#         title="T1/2 fittati",
-#     )
-#     fig.update_layout(
-#         shapes=[
-#             dict(
-#                 type="line",
-#                 x0=-0.5,  # Inizia appena prima della prima barra
-#                 x1=10 - 0.5,  # Termina dopo l'ultima barra
-#                 y0=6.6,  # Altezza della linea
-#                 y1=6.6,  # Altezza della linea
-#                 line=dict(color="salmon", width=2, dash="dash"),  # Stile della linea
-#             )
-#         ]
-#     )
-#     fig.update_layout(
-#         yaxis=dict(range=[min(all_found_t12) * 0.95, max(all_found_t12) * 1.05]),  # Range fisso per l'asse Y
-#     )
-#     # fig = px.bar(
-#     #    x=["Min", "Max"],
-#     #    y=selected_range,
-#     #    labels={"x": "Estremo", "y": "Valore"},
-#     #    title="Valori Estremi del Range Selezionato",
-#     # )
-#     print("Fatto", all_found_t12)
-#     return fig
-#
-#
-# # Callback per aggiornare il grafico dei valori estremi
-# @app.callback(
-#     Output("all-taus-diff", "figure"),
-#     Input("range-slider", "value"),
-#     Input("fraction-slider", "value"),
-#     Input("meas-number-slider", "value"),
-# )
-# def update_all_taus_diff_graph(selected_range, selected_fraction, selected_num_meas):
-#     print("Entro in update_all_taus_diff_graph, chiamato da", ctx.triggered_id)
-#     global all_found_t12
-#
-#     fig = px.bar(
-#         x=range(10),
-#         y=[(x - real_t12) * 100 for x in all_found_t12 if x != 0],
-#         labels={"x": "Channel", "y": "Diff T1/2 [%]"},
-#         title="Errori % su T1/2",
-#     )
-#
-#     fig.update_layout(
-#         yaxis=dict(range=[-100, 100]),  # Range fisso per l'asse Y
-#     )
-#
-#     fig.update_traces(marker_color="coral")
-#     return fig
-#
 
 # Esecuzione dell'app
 if __name__ == "__main__":
