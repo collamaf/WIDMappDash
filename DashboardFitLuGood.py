@@ -96,7 +96,7 @@ print(
 #    print(f"Misura generata: {meas:.1f} min")
 # Inizializzazione dell'app Dash
 app = dash.Dash(__name__)
-
+server = app.server
 
 # Funzione per generare un grafico scatter con Seaborn
 def generate_scatterplot(x_range=None):
