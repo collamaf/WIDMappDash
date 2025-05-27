@@ -357,4 +357,4 @@ def update_plots(selected_range, selected_fraction, meas_to_generate, meas_durat
 
 # Esecuzione dell'app
 if __name__ == "__main__":
-    app.run_server(debug=True)
+    app.run(debug=True)
