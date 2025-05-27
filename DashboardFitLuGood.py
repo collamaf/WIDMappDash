@@ -55,9 +55,11 @@ def generate_meas_intervals(meas_to_gen, min_value, max_value, min_distance):
     return numbers
 
 
+# filename = "rate_Lu_IFO_soglie13_Overweekend2401_senzacorrezione.csv"
+filename = "20250514_IFO_LuRate_AllData_senzacorrezione.csv"
 # Caricamento dati con gestione errori
 try:
-    df = pd.read_csv('rate_Lu_IFO_soglie13_Overweekend2401_senzacorrezione.csv', parse_dates=['tempo_h'])
+    df = pd.read_csv(filename, parse_dates=['tempo_h'])
 except FileNotFoundError:
     print("Errore: File CSV non trovato.")
     df = pd.DataFrame()
