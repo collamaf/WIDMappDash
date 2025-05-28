@@ -180,9 +180,9 @@ app.layout = html.Div(
                                 html.H4("Selezione Frazione", id="fraction-title"),
                                 dcc.Slider(
                                     id="fraction-slider",
-                                    min=0,
+                                    min=0.1,
                                     max=100,
-                                    step=1,
+                                    step=0.1,
                                     value=100,
                                     marks={i: str(i) for i in range(0, 101, 2)},
                                 ),
@@ -340,7 +340,7 @@ def update_plots(selected_range, selected_fraction, meas_to_generate, meas_durat
     """Genera il grafico dei t1/2 DIFF"""
     fig_t12_diff = px.bar(
         x=range(10),
-        y=[(x - real_t12) * 100 for x in all_found_t12 if x != 0],
+        y=[(x - real_t12) * 100 / real_t12 for x in all_found_t12 if x != 0],
         labels={"x": "Channel", "y": "Diff T1/2 [%]"},
         title="Errori % su T1/2",
     )
